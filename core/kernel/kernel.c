@@ -85,6 +85,8 @@ void kmain() {
             test_syscall();
         } else if (strcmp(sometext, "clear") == 0) {
             clearscreen();
+        } else if (strcmp(sometext, "shutdown") == 0) {
+            acpi_off();
         } else {
             kprint("Unknown command: ", 7);
             kprint(sometext, 7);
