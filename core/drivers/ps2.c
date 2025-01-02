@@ -1,6 +1,6 @@
 #include <core/drivers/keymap.h>
 
-// Read a character from the keyboard
+extern char port_byte_in(int port);
 char __getch() {
     char symbol;
     while (1) {

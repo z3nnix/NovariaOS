@@ -10,9 +10,7 @@ section .text
 global start
 global port_byte_in
 global outb
-global system_call_wrapper
 extern kmain
-extern syscall_handler
 
 start:
     cli                  ; Disable interrupts
@@ -31,13 +29,6 @@ outb:
     mov al, [esp + 8]   ; Get the value from the arguments
     out dx, al          ; Write the value to the port
     ret
-
-system_call_wrapper:
-    pusha
-    call syscall_handler
-    popa
-    iret
-
 
 section .bss
 align 4

@@ -5,4 +5,4 @@ void acpi_off() {
     while (1) {
         asm volatile ("hlt");
     }
-} // 
+} // https://t.me/novariaos/11

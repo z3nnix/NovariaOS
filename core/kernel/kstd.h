@@ -69,5 +69,4 @@ void kprint(const char *str, int color) {
     }
 }
 
-
 #endif // _KSTD_H
