@@ -1,5 +1,8 @@
 #include <stdint.h>
 
+extern uint8_t port_byte_in(uint16_t port);
+extern void port_byte_out(uint16_t port, uint8_t val);
+
 #define LINES 25
 #define COLUMNS_IN_LINE 80
 #define BYTES_FOR_EACH_ELEMENT 2
@@ -7,14 +10,13 @@
 
 unsigned int current_loc = 0;  // Current position in video memory
 char *video = (char*)0xb8000;   // Address of VGA video memory
-void outb(unsigned short port, unsigned char val);
 
 void terminal_set_cursor(int x, int y) {
     uint16_t pos = y * COLUMNS_IN_LINE + x;
-    outb(0x3D4, 0x0F);
-    outb(0x3D5, (uint8_t)(pos & 0xFF));
-    outb(0x3D4, 0x0E);
-    outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
+    port_byte_out(0x3D4, 0x0F);
+    port_byte_out(0x3D5, (uint8_t)(pos & 0xFF));
+    port_byte_out(0x3D4, 0x0E);
+    port_byte_out(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
 
 // Scroll the screen
@@ -69,4 +71,19 @@ void clearscreen(void) {
     }
     current_loc = 0;  // Reset cursor position
     terminal_set_cursor(0, 0); // Set cursor to top left
+}
+
+// Enable blinking cursor
+void enable_cursor() {
+    port_byte_out(0x3D4, 0x0A);
+    port_byte_out(0x3D5, (port_byte_in(0x3D5) & 0xC0) | 0); // Set cursor start scanline to 0
+
+    port_byte_out(0x3D4, 0x0B);
+    port_byte_out(0x3D5, (port_byte_in(0x3D5) & 0xE0) | 15); // Set cursor end scanline to 15
+}
+
+// Disable blinking cursor
+void disable_cursor() {
+    port_byte_out(0x3D4, 0x0A);
+    port_byte_out(0x3D5, 0x20); // Disable cursor by setting cursor start scanline bit 5 to 1
 }
