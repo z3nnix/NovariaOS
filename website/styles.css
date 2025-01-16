@@ -120,6 +120,16 @@ h2 {
     color: #fab509;
 }
 
+h1 {
+    color: #fab509;
+}
+
+p {
+    font-size: 1.2em;
+    color: #fefefe;
+    line-height: 1.6;
+}
+
 hr {
     border: none;
     height: 3px;
@@ -139,12 +149,12 @@ hr {
     padding-left: 20px;
 }
 
-.listt li::before {
+/* .list li::before {
     content: "•";
     position: absolute;
     left: 0;
     top: 0;
-}
+} */
 
 a {
     color: #5895f0;

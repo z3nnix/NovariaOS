@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Documentation</title>
+    <style>
+        #docs-tree {
+            width: 30%;
+            float: left;
+        }
+        #docs-content {
+            width: 70%;
+            float: left;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>NovariaOS - Docs</h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="https://github.com/z3nnix/novariaos">Github</a></li>
+                    <li><a href="https://novariaos.t.me">Telegram</a></li>
+                    <li><a href="docs.html">Docs</a></li>
+                    <li><a href="index.html">About</a></li>
+                    <li><a href="index.html">Download</a></li>
+                    <li><a href="index.html">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div id="docs-tree" class="list"></div>
+    <div id="docs-content"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const repoOwner = 'z3nnix';
+        const repoName = 'novariaos';
+
+        async function fetchRepoContents(path = '') {
+            const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/docs/${path}`);
+            return await response.json();
+        }
+
+        async function fetchFileContent(path) {
+            const response = await fetch(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/docs/${path}`);
+            return await response.text();
+        }
+
+        async function renderDocsTree(path = '', parentElement = document.getElementById('docs-tree')) {
+            const contents = await fetchRepoContents(path);
+            const ul = document.createElement('ul');
+            parentElement.appendChild(ul);
+
+            for (const item of contents) {
+                const li = document.createElement('li');
+                li.classList.add('list');
+
+                if (item.type === 'dir') {
+                    li.textContent = item.name.replace(/-/g, ' ');
+                    ul.appendChild(li);
+                    await renderDocsTree(item.path.replace('docs/', ''), li);
+                } else if (item.type === 'file' && item.name.endsWith('.md')) {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = item.name.replace(/-/g, ' ').replace('.md', '');
+                    a.onclick = async () => {
+                        const markdown = await fetchFileContent(item.path.replace('docs/', ''));
+                        document.getElementById('docs-content').innerHTML = marked.parse(markdown);
+                    };
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                }
+            }
+        }
+
+        renderDocsTree();
+    </script>
+</body>
+</html>
