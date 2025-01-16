@@ -8,8 +8,8 @@ align 4
 
 section .text
 global start
-global port_byte_in
-global port_byte_out
+global inb
+global outb
 extern kmain
 
 start:
@@ -20,14 +20,14 @@ start:
     hlt                  ; Halt the processor
 
 ; Function to read a byte from a port
-port_byte_in:
+inb:
     mov dx, [esp + 4]    ; Get the port from the arguments
     in al, dx            ; Read the value from the port
     mov [esp + 4], al    ; Store the value in the return location
     ret
 
 ; Function to write a byte to a port
-port_byte_out:
+outb:
     mov dx, [esp + 4]    ; Get the port from the arguments
     mov al, [esp + 8]    ; Get the value from the arguments
     out dx, al           ; Write the value to the port

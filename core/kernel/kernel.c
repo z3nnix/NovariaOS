@@ -22,4 +22,5 @@ void kmain() {
 
     kprint("                                 TG: ", 15); // bruh
     kprint("@NovariaOS\n", 9);
+    pit_init();
 }

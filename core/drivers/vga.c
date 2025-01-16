@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-extern uint8_t port_byte_in(uint16_t port);
-extern void port_byte_out(uint16_t port, uint8_t val);
+extern uint8_t inb(uint16_t port);
+extern void outb(uint16_t port, uint8_t val);
 
 #define LINES 25
 #define COLUMNS_IN_LINE 80
@@ -13,10 +13,10 @@ char *video = (char*)0xb8000;   // Address of VGA video memory
 
 void terminal_set_cursor(int x, int y) {
     uint16_t pos = y * COLUMNS_IN_LINE + x;
-    port_byte_out(0x3D4, 0x0F);
-    port_byte_out(0x3D5, (uint8_t)(pos & 0xFF));
-    port_byte_out(0x3D4, 0x0E);
-    port_byte_out(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (uint8_t)(pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
 
 // Scroll the screen
@@ -32,6 +32,24 @@ void scroll() {
 }
 
 // Print a string with the specified color
+/* colors numbers:
+       0  - black
+      1  - blue
+      2  - green
+      3  - cyan
+      4  - red
+      5  - purple
+      6  - brown
+      7  - gray
+      8  - dark gray
+      9  - light blue
+      10 - light green
+      11 - light cyan
+      12 - light red
+      13 - light purple
+      14 - yellow
+      15 - white
+   */
 void vgaprint(const char *str, int color) {
     unsigned int i = 0;
     while (str[i] != '\0') {
@@ -75,15 +93,15 @@ void clearscreen(void) {
 
 // Enable blinking cursor
 void enable_cursor() {
-    port_byte_out(0x3D4, 0x0A);
-    port_byte_out(0x3D5, (port_byte_in(0x3D5) & 0xC0) | 0); // Set cursor start scanline to 0
+    outb(0x3D4, 0x0A);
+    outb(0x3D5, (inb(0x3D5) & 0xC0) | 0); // Set cursor start scanline to 0
 
-    port_byte_out(0x3D4, 0x0B);
-    port_byte_out(0x3D5, (port_byte_in(0x3D5) & 0xE0) | 15); // Set cursor end scanline to 15
+    outb(0x3D4, 0x0B);
+    outb(0x3D5, (inb(0x3D5) & 0xE0) | 15); // Set cursor end scanline to 15
 }
 
 // Disable blinking cursor
 void disable_cursor() {
-    port_byte_out(0x3D4, 0x0A);
-    port_byte_out(0x3D5, 0x20); // Disable cursor by setting cursor start scanline bit 5 to 1
+    outb(0x3D4, 0x0A);
+    outb(0x3D5, 0x20); // Disable cursor by setting cursor start scanline bit 5 to 1
 }
