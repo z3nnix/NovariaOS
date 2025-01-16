@@ -36,5 +36,5 @@ outb:
 section .bss
 align 4
 stack_bottom:
-    resb 16384           ; 16 KB for stack
+    resb 65536           ; 64 KB for stack
 stack_space:

@@ -3,9 +3,10 @@
 
 #include <core/kernel/idt.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/multiboot.h>
 
 extern void disable_cursor();
-void kmain() {
+void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
     const char* ascii_art[] = {
         " _   _                      _        ___  ____  ",
@@ -20,7 +21,17 @@ void kmain() {
         kprint("\n", 15);
     }
 
-    kprint("                                 TG: ", 15); // bruh
+    kprint("                                 TG: ", 15);
     kprint("@NovariaOS\n", 9);
-    pit_init();
+    
+    size_t total_memory = (mb_info->mem_upper + 1024) * 1024;
+    initializeMemoryManager((void*)0x100000, total_memory);
+
+    void* allocated_mem = allocateMemory(1024);
+    if (allocated_mem != NULL) {
+        // ???
+    }
+
+    freeMemory(allocated_mem);
+    stressTestMemoryManager();
 }
