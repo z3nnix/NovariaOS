@@ -149,6 +149,10 @@ hr {
     padding-left: 20px;
 }
 
+li {
+    color: #ffffff;
+}
+
 /* .list li::before {
     content: "•";
     position: absolute;
