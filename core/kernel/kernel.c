@@ -35,5 +35,7 @@ void kmain(multiboot_info_t* mb_info) {
     uint32_t available_memory = mb_info->mem_upper * 1024;
     initializeMemoryManager((void*)0x100000, available_memory);
 
+    init_serial();
+
     mm_test();
 }
