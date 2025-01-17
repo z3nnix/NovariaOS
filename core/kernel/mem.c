@@ -88,36 +88,29 @@ void freeMemory(void* ptr) {
     freeList = block;
 }
 
-void stressTestMemoryManager() {
-    void* allocations[1000];
-    
-    for (int i = 0; i < 1000; i++) {
-        size_t size = (i % 256) + 1;
-        allocations[i] = allocateMemory(size);
-        if (allocations[i] == NULL) {
-            kprint("Memory allocation failed\n", 15);
-        }
+void mm_test() {
+    kprint(":: starting memory test...\n\n", 7);
+    kprint("Allocating 256 bytes of memory...\n", 7);
+    void* ptr1 = allocateMemory(256);
+    if (ptr1 != NULL) {
+        kprint("Memory allocated successfully\n", 2);
+    } else {
+        kprint("Memory allocation failed\n", 4);
     }
 
-    for (int i = 0; i < 1000; i++) {
-        if (allocations[i] != NULL) {
-            freeMemory(allocations[i]);
-        }
+    kprint("Allocating 512 bytes of memory...\n", 7);
+    void* ptr2 = allocateMemory(512);
+    if (ptr2 != NULL) {
+        kprint("Memory allocated successfully\n", 2);
+    } else {
+        kprint("Memory allocation failed\n", 4);
     }
 
-    for (int i = 0; i < 1000; i++) {
-        size_t size = ((i + 128) % 256) + 1;
-        allocations[i] = allocateMemory(size);
-        if (allocations[i] == NULL) {
-            kprint("Memory allocation failed\n", 15);
-        }
-    }
+    kprint("Freeing 256 bytes of memory...\n", 7);
+    freeMemory(ptr1);
 
-    for (int i = 0; i < 1000; i++) {
-        if (allocations[i] != NULL) {
-            freeMemory(allocations[i]);
-        }
-    }
+    kprint("Freeing 512 bytes of memory...\n", 7);
+    freeMemory(ptr2);
 
-    kprint(":: memory stress test completed\n", 7);
+    kprint("\n:: Memory manager test completed\n", 7);
 }

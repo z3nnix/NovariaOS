@@ -49,7 +49,7 @@ grub-mkrescue -o "build_${DATE}.iso" build || {
 rm *.o
 
 # Run QEMU with the created ISO image
-qemu-system-i386 -m 6M -cdrom "build_${DATE}.iso" || {
+qemu-system-i386 -m 16M -cdrom "build_${DATE}.iso" || {
     echo "Error running QEMU"
     exit 1
 }

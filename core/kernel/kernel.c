@@ -1,13 +1,17 @@
-#include <string.h>
-#include <stdint.h>
-
-#include <core/kernel/idt.h>
-#include <core/kernel/kstd.h>
 #include <core/kernel/multiboot.h>
+#include <core/kernel/kstd.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 extern void disable_cursor();
+extern void initializeMemoryManager(void* memoryPool, size_t size);
+extern void* allocateMemory(size_t size);
+extern void freeMemory(void* ptr);
+extern void kprint(const char* str, int color);
+
 void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
+
     const char* ascii_art[] = {
         " _   _                      _        ___  ____  ",
         "| \\ | | _____   ____ _ _ __(_) __ _ / _ \\/ ___| ",
@@ -23,15 +27,11 @@ void kmain(multiboot_info_t* mb_info) {
 
     kprint("                                 TG: ", 15);
     kprint("@NovariaOS\n", 9);
-    
-    size_t total_memory = (mb_info->mem_upper + 1024) * 1024;
-    initializeMemoryManager((void*)0x100000, total_memory);
 
-    void* allocated_mem = allocateMemory(1024);
-    if (allocated_mem != NULL) {
-        // ???
-    }
+    kprint(":: Initializing memory manager...\n", 7);
 
-    freeMemory(allocated_mem);
-    stressTestMemoryManager();
+    uint32_t available_memory = mb_info->mem_upper * 1024;
+    initializeMemoryManager((void*)0x100000, available_memory);
+
+    mm_test();
 }
