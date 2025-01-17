@@ -1,3 +1,4 @@
+#include <core/arch/multiboot.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -7,12 +8,6 @@ typedef struct MemoryBlock {
 } MemoryBlock;
 
 static MemoryBlock* freeList = NULL;
-
-typedef struct multiboot_info {
-    uint32_t flags;
-    uint32_t mem_lower;
-    uint32_t mem_upper;
-} multiboot_info_t;
 
 void formatMemorySize(size_t size, char* buffer) {
     const char* units[] = {"B", "KB", "MB", "GB"};
@@ -48,7 +43,7 @@ void initializeMemoryManager(void* memoryPool, size_t poolSize) {
 
     char buffer[64];
     formatMemorySize(freeList->size, buffer);
-    kprint(":: memory detected (", 7);
+    kprint(":: Memory detected (", 7);
     kprint(buffer, 7);
     kprint(")\n", 7);
 }
@@ -89,7 +84,7 @@ void freeMemory(void* ptr) {
 }
 
 void mm_test() {
-    kprint(":: starting memory test...\n\n", 7);
+    kprint(":: Starting memory test...\n\n", 7);
     kprint("Allocating 256 bytes of memory...\n", 7);
     void* ptr1 = allocateMemory(256);
     if (ptr1 != NULL) {

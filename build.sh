@@ -17,8 +17,9 @@ nasm -f elf32 core/kernel/kernel.asm -o kasm.o || {
 }
 
 # Compile C files
+compile_c_file core/arch/acpi.c acpi.o
+
 compile_c_file core/kernel/kernel.c kc.o
-compile_c_file core/kernel/acpi.c acpi.o
 compile_c_file core/kernel/mem.c mem.o
 
 compile_c_file core/drivers/ps2.c ps2.o
@@ -49,7 +50,7 @@ grub-mkrescue -o "build_${DATE}.iso" build || {
 rm *.o
 
 # Run QEMU with the created ISO image
-qemu-system-i386 -m 16M -cdrom "build_${DATE}.iso" || {
+qemu-system-i386 -m 5M -cdrom "build_${DATE}.iso" || {
     echo "Error running QEMU"
     exit 1
 }

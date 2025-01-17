@@ -1,4 +1,5 @@
-#include <core/kernel/multiboot.h>
+#include <core/arch/multiboot.h>
+
 #include <core/kernel/kstd.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -7,6 +8,7 @@ extern void disable_cursor();
 extern void initializeMemoryManager(void* memoryPool, size_t size);
 extern void* allocateMemory(size_t size);
 extern void freeMemory(void* ptr);
+void mm_test();
 extern void kprint(const char* str, int color);
 
 void kmain(multiboot_info_t* mb_info) {
