@@ -1,5 +1,4 @@
-#include <core/arch/multiboot.h>
-#include <core/kernel/kstd.h>
+#include <core/kernel/mem.h>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -39,15 +38,28 @@ void formatMemorySize(size_t size, char* buffer) {
 }
 
 void initializeMemoryManager(void* memoryPool, size_t poolSize) {
-    freeList = (MemoryBlock*)memoryPool;
-    freeList->size = poolSize - sizeof(MemoryBlock);
-    freeList->next = NULL;
+    if (poolSize < 16 * 1024 * 1024) {
+        kprint("Kernel panic - Detected memory size is less than 16 MB (", 4);
+        
+        char buffer[64];
+        formatMemorySize(poolSize, buffer);
+        kprint(buffer, 4);
+        kprint(")\n", 4);
 
-    char buffer[64];
-    formatMemorySize(freeList->size, buffer);
-    kprint(":: Memory detected (", 7);
-    kprint(buffer, 7);
-    kprint(")\n", 7);
+        serial_print("Memory manager:\n\tKernel panic - Detected memory size is less than 16 MB");
+
+        asm("hlt");
+    } else {
+        freeList = (MemoryBlock*)memoryPool;
+        freeList->size = poolSize - sizeof(MemoryBlock);
+        freeList->next = NULL;
+
+        char buffer[64];
+        formatMemorySize(freeList->size, buffer);
+        kprint(":: Memory detected (", 7);
+        kprint(buffer, 7);
+        kprint(")\n", 7);
+    }
 }
 
 void* allocateMemory(size_t size) {
