@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <core/arch/multiboot.h>
 #include <core/kernel/kstd.h>
+#include <core/drivers/serial.h>
 
 extern void initializeMemoryManager(void* memoryPool, size_t size);
 extern void* allocateMemory(size_t size);
