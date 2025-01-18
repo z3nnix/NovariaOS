@@ -1,72 +1,10 @@
 #ifndef _KSTD_H
 #define _KSTD_H
-typedef _Bool bool;
 
-#define true 1
-#define false 0
-void newline(void);
-void vgaprint(const char *str, int color);
+#include <stdbool.h>
 
-void reverse(char* str, int length) {
-    int start = 0;
-    int end = length - 1;
-    while (start < end) {
-        char temp = str[start];
-        str[start] = str[end];
-        str[end] = temp;
-        start++;
-        end--;
-    }
-}
-
-char* itoa(int num, char* str, int base) {
-    int i = 0;
-    bool is_negative = false;
-
-    // Handle 0 explicitly, since it is a special case
-    if (num == 0) {
-        str[i++] = '0';
-        str[i] = '\0';
-        return str;
-    }
-
-    // Handle negative numbers only for base 10
-    if (num < 0 && base == 10) {
-        is_negative = true;
-        num = -num;
-    }
-
-    // Process individual digits
-    while (num != 0) {
-        int rem = num % base;
-        str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0'; // Convert to character
-        num /= base;
-    }
-
-    // If the number is negative, append '-'
-    if (is_negative) {
-        str[i++] = '-';
-    }
-
-    str[i] = '\0'; // Null-terminate the string
-
-    // Reverse the string
-    reverse(str, i);
-
-    return str;
-}
-
-void kprint(const char *str, int color) {
-    while (*str) { // While not at the end of the string
-        if (*str == '\n') {
-            newline(); // Move to a new line
-        } else {
-            // Print a single character with the specified color
-            char temp[2] = {*str, '\0'}; // Create a temporary string for one character
-            vgaprint(temp, color); // Print current character with specified color
-        }
-        str++; // Move to the next character
-    }
-}
+void reverse(char* str, int length);
+char* itoa(int num, char* str, int base);
+void kprint(const char *str, int color);
 
 #endif // _KSTD_H

@@ -2,6 +2,7 @@
 #ifndef MULTIBOOT_H
 #define MULTIBOOT_H
 
+#include <core/kernel/kstd.h>
 #include <stdint.h>
 
 typedef struct multiboot_info {

@@ -1,4 +1,6 @@
 #include <core/arch/multiboot.h>
+#include <core/kernel/kstd.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
