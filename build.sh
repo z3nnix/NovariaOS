@@ -11,7 +11,7 @@ compile_c_file() {
 }
 
 # Assembler compilation
-nasm -f elf32 core/kernel/kernel.asm -o kasm.o || {
+nasm -f elf32 core/arch/boot.asm -o kasm.o || {
     echo "Error assembling kernel.asm"
     exit 1
 }
