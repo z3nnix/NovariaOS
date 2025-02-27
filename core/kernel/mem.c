@@ -1,5 +1,4 @@
 #include <core/kernel/mem.h>
-#include <core/arch/pause.h>
 #include <stddef.h>
 #include <stdint.h>
 
