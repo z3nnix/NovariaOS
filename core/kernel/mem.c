@@ -1,5 +1,5 @@
 #include <core/kernel/mem.h>
-
+#include <core/arch/pause.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -48,7 +48,7 @@ void initializeMemoryManager(void* memoryPool, size_t poolSize) {
 
         serial_print("Memory manager:\n\tKernel panic - Detected memory size is less than 16 MB");
 
-        asm("hlt");
+        pause();
     } else {
         freeList = (MemoryBlock*)memoryPool;
         freeList->size = poolSize - sizeof(MemoryBlock);

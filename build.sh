@@ -18,6 +18,7 @@ nasm -f elf32 core/arch/boot.asm -o kasm.o || {
 
 # Compile C files
 compile_c_file core/arch/acpi.c acpi.o
+compile_c_file core/arch/pause.c pause.o
 
 compile_c_file core/kernel/kernel.c kc.o
 compile_c_file core/kernel/kstd.c kstd.o
