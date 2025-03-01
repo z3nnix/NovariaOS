@@ -24,8 +24,11 @@ compile_c_file core/kernel/kernel.c kc.o
 compile_c_file core/kernel/kstd.c kstd.o
 compile_c_file core/kernel/mem.c mem.o
 
+# compile_c_file core/kernel/nvm/nvm.c nvm.o
+
 compile_c_file core/drivers/ps2.c ps2.o
 compile_c_file core/drivers/vga.c vga.o
+compile_c_file core/drivers/timer.c timer.o
 compile_c_file core/drivers/serial.c serial.o
 
 # Link object files with flags for non-executable stack
