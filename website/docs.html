@@ -16,7 +16,6 @@
             float: left;
             margin-left: 2%;
         }
-
     </style>
 </head>
 <body>
@@ -60,6 +59,8 @@
             const ul = document.createElement('ul');
             parentElement.appendChild(ul);
 
+            let firstMarkdownFile = null;
+
             for (const item of contents) {
                 const li = document.createElement('li');
                 li.classList.add('list');
@@ -69,6 +70,10 @@
                     ul.appendChild(li);
                     await renderDocsTree(item.path.replace('docs/', ''), li);
                 } else if (item.type === 'file' && item.name.endsWith('.md')) {
+                    if (!firstMarkdownFile) {
+                        firstMarkdownFile = item;
+                    }
+
                     const a = document.createElement('a');
                     a.href = '#';
                     a.textContent = item.name.replace(/-/g, ' ').replace('.md', '');
@@ -79,6 +84,11 @@
                     li.appendChild(a);
                     ul.appendChild(li);
                 }
+            }
+
+            if (firstMarkdownFile) {
+                const markdown = await fetchFileContent(firstMarkdownFile.path.replace('docs/', ''));
+                document.getElementById('docs-content').innerHTML = marked.parse(markdown);
             }
         }
 
