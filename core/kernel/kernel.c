@@ -3,7 +3,7 @@
 #include <core/kernel/kstd.h>
 #include <core/kernel/mem.h>
 
-#include <core/kernel/nvm/nvm.h>
+// #include <core/kernel/nvm/nvm.h>
 
 #include <core/drivers/serial.h>
 #include <core/drivers/vga.h>
@@ -38,7 +38,4 @@ void kmain(multiboot_info_t* mb_info) {
 
     init_serial();
     pit_init();
-    nvm_init();
-
-    mm_test();
 }
