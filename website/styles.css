@@ -166,16 +166,16 @@ a {
 }
 
 code {
-    background-color: #f4f4f4;
-    color: #333;
+    background-color: #2d2d2d;
+    color: #ffffff;
     font-family: 'Courier New', Courier, monospace;
     padding: 4px 8px;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid #333;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease;
 }
 
 code:hover {
-    background-color: #eaeaea;
+    background-color: #1a1a1a;
 }
