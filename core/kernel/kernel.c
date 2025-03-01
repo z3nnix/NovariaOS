@@ -3,8 +3,11 @@
 #include <core/kernel/kstd.h>
 #include <core/kernel/mem.h>
 
+#include <core/kernel/nvm/nvm.h>
+
 #include <core/drivers/serial.h>
 #include <core/drivers/vga.h>
+#include <core/drivers/timer.h>
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -34,6 +37,8 @@ void kmain(multiboot_info_t* mb_info) {
     initializeMemoryManager((void*)0x100000, available_memory);
 
     init_serial();
+    pit_init();
+    nvm_init();
 
     mm_test();
 }
