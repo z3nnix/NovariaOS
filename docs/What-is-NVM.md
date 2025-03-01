@@ -1,0 +1,13 @@
+# What is NVM?
+NVM(Novaria Virtual Machine) — mechanism built into the NovariaOS kernel, designed to replace native programs. (within the framework of novaria)
+
+# How it work?
+All programs are represented as .nvm files. These files contain the bytecode of the virtual machine. NVM saves the result of work in files located in /proc/nvm/, as well as the uninterpreted part of bytecode - in theory, this will help to continue the program from any place.
+
+NVM keeps a list of active processes and switches between them every two milliseconds, loading the result of work and the bytecode that needs to be interpreted from /proc/nvm/*.nvm.
+
+# Why it's cool?
+- Easier software development for the OS
+- Experiments. There is no such thing in any OS
+- Fewer context changes - more performance, perhaps
+- Compiler developers are given the option of creating a compiler for NovariaOS or augmenting an existing compiler to create .nvm programs.
