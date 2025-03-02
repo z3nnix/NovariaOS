@@ -23,7 +23,6 @@ targets:
       - "mkdir -p ${BUILD_DIR}"
       - "mv ${@} ${BUILD_DIR}/"
       - "find . -name '*.o' -delete"
-      - "rm -f build_*.iso"
 
   kasm.o:
     deps: []
