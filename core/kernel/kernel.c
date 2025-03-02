@@ -3,7 +3,7 @@
 #include <core/kernel/kstd.h>
 #include <core/kernel/mem.h>
 
-// #include <core/kernel/nvm/nvm.h>
+#include <core/kernel/nvm/nvm.h>
 
 #include <core/drivers/serial.h>
 #include <core/drivers/vga.h>
@@ -11,6 +11,20 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+
+void execute_nvm_commands(const char* commands) {
+    char* command = (char*)commands;
+    while (*command) {
+        nvm_execute(command);
+        // Move to the next command (skip null terminator)
+        while (*command && *command != '\n') {
+            command++;
+        }
+        if (*command == '\n') {
+            command++;
+        }
+    }
+}
 
 void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
@@ -38,4 +52,9 @@ void kmain(multiboot_info_t* mb_info) {
 
     init_serial();
     pit_init();
+
+    nvm_init();
+
+    // Execute commands from .nvm files
+    execute_nvm_commands(apps);
 }
