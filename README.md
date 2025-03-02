@@ -20,10 +20,14 @@ NovariaOS
 ├── README.md
 ├── build
 │   └── boot
-│       └── grub
-│           └── grub.cfg
-├── build.sh
+│       ├── grub
+│       │   └── grub.cfg
+│       └── kernel.bin
+├── build_2025-03-02.iso
+├── chorus.build
 ├── core
+│   ├── apps
+│   │   └── hello.nvm
 │   ├── arch
 │   │   ├── acpi.c
 │   │   ├── boot.asm
@@ -36,6 +40,8 @@ NovariaOS
 │   │   ├── ps2.c
 │   │   ├── serial.c
 │   │   ├── serial.h
+│   │   ├── timer.c
+│   │   ├── timer.h
 │   │   ├── vga.c
 │   │   └── vga.h
 │   └── kernel
@@ -43,17 +49,22 @@ NovariaOS
 │       ├── kstd.c
 │       ├── kstd.h
 │       ├── mem.c
-│       └── mem.h
+│       ├── mem.h
+│       └── nvm
+│           ├── nvm.c
+│           └── nvm.h
 ├── docs
-│   ├── Build-from-source.md
-│   ├── Our-goals.md
-│   └── What-is-Novaria.md
+│   ├── 1.0-What-is-Novaria.md
+│   ├── 1.1-Our-goals.md
+│   ├── 1.2-Build-from-source.md
+│   └── 2.0-What-is-NVM.md
 ├── lib
 │   └── nc
 │       ├── stdbool.h
 │       ├── stdlib.h
 │       └── time.h
 ├── link.ld
+├── qemu.log
 └── website
     ├── docs.html
     ├── index.html
