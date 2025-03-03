@@ -79,10 +79,10 @@ targets:
     cmds:
       - "${CC} ${CFLAGS} core/drivers/serial.c -o ${@}"
 
-  update-nvm:
+  load-nvm:
     phony: true
     cmds:
-      - "internal:update_nvm core/apps/hello.nvm"
+      - "internal:load_nvm core/apps/hello.nvm"
 
   restore-nvm:
     phony: true
@@ -96,6 +96,5 @@ targets:
 
   run:
     phony: true
-    deps: [iso]
     cmds:
       - "${QEMU} -m 30M -serial file:qemu.log -cdrom build_${DATE}.iso"
