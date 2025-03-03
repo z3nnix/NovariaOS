@@ -18,12 +18,6 @@ Follow us on social media! TG: [@novariaos](https://t.me/novariaos)
 NovariaOS
 ├── LICENSE
 ├── README.md
-├── build
-│   └── boot
-│       ├── grub
-│       │   └── grub.cfg
-│       └── kernel.bin
-├── build_2025-03-02.iso
 ├── chorus.build
 ├── core
 │   ├── apps
@@ -64,7 +58,6 @@ NovariaOS
 │       ├── stdlib.h
 │       └── time.h
 ├── link.ld
-├── qemu.log
 └── website
     ├── docs.html
     ├── index.html
