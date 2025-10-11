@@ -19,6 +19,19 @@ void reverse(char* str, int length) {
     }
 }
 
+void strncpy(char *dest, const char *src, unsigned int n) {
+    unsigned int i = 0;
+    while (i < n && src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    while (i < n) {
+        dest[i] = '\0';
+        i++;
+    }
+}
+
+
 char* itoa(int num, char* str, int base) {
     int i = 0;
     bool is_negative = false;

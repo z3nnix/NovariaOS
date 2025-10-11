@@ -9,22 +9,13 @@
 #include <core/drivers/vga.h>
 #include <core/drivers/timer.h>
 
+#include <core/fs/ramfs.h>
+
 #include <stddef.h>
 #include <stdbool.h>
 
-void execute_nvm_commands(const char* commands) {
-    char* command = (char*)commands;
-    while (*command) {
-        nvm_execute(command);
-        // Move to the next command (skip null terminator)
-        while (*command && *command != '\n') {
-            command++;
-        }
-        if (*command == '\n') {
-            command++;
-        }
-    }
-}
+int counter = 0;
+char content[32];
 
 void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
@@ -52,9 +43,6 @@ void kmain(multiboot_info_t* mb_info) {
 
     init_serial();
     pit_init();
-
+    ramfs_init();
     nvm_init();
-
-    // Execute commands from .nvm files
-    execute_nvm_commands(apps);
 }

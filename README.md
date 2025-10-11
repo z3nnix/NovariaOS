@@ -18,10 +18,15 @@ Follow us on social media! TG: [@novariaos](https://t.me/novariaos)
 NovariaOS
 ├── LICENSE
 ├── README.md
+├── apps
+│   └── hello.nvm.source
+├── build
+│   └── boot
+│       ├── grub
+│       │   └── grub.cfg
+│       └── kernel.bin
 ├── chorus.build
 ├── core
-│   ├── apps
-│   │   └── hello.nvm
 │   ├── arch
 │   │   ├── acpi.c
 │   │   ├── boot.asm
@@ -38,6 +43,9 @@ NovariaOS
 │   │   ├── timer.h
 │   │   ├── vga.c
 │   │   └── vga.h
+│   ├── fs
+│   │   ├── ramfs.c
+│   │   └── ramfs.h
 │   └── kernel
 │       ├── kernel.c
 │       ├── kstd.c
@@ -51,13 +59,16 @@ NovariaOS
 │   ├── 1.0-What-is-Novaria.md
 │   ├── 1.1-Our-goals.md
 │   ├── 1.2-Build-from-source.md
-│   └── 2.0-What-is-NVM.md
+│   ├── 2.0-What-is-NVM.md
+│   └── 3.0-What-is-RamFS
 ├── lib
 │   └── nc
 │       ├── stdbool.h
 │       ├── stdlib.h
 │       └── time.h
 ├── link.ld
+├── nvmtools.rb
+├── qemu.log
 └── website
     ├── docs.html
     ├── index.html

@@ -13,6 +13,4 @@ static void my_strcpy(char* dest, const char* src);
 static void my_strcat(char* dest, const char* src);
 extern void clearscreen(void);
 
-static const char apps[] = "";
-
 #endif
