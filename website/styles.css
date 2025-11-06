@@ -1,181 +1,79 @@
-body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #1a1a1a;
-    color: #333333;
-}
-
-header {
-    position: relative;
-    color: #ffffff;
-    padding: 1em 0;
-    overflow: hidden;
-}
-
-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
+table {
     width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-        45deg,
-        #1a1a1a,
-        #1a1a1a 10px,
-        #ffd470 10px,
-        #ffd470 20px
-    );
-    z-index: -1;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 2em 0;
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(255, 212, 112, 0.1);
+    border: 2px solid #ffd470;
 }
 
-header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1em;
+thead {
+    background: linear-gradient(135deg, #ffd470 0%, #ffb347 100%);
 }
 
-header h1 {
-    margin: 0;
-    font-size: 1.5em;
-    color: #000000;
-    background-color: #ffd470;
-    padding: 0.2em 0.5em;
-}
-
-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    gap: 1em;
-}
-
-nav ul li a {
-    color: #ffd470;
-    text-decoration: none;
+thead th {
+    color: #1a1a1a;
     font-weight: bold;
-    background-color: #1a1a1a;
-    padding: 0.5em 1em;
-    border-radius: 0.2em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 1.2em;
+    text-align: left;
+    font-size: 0.95em;
+    border-bottom: 3px solid #1a1a1a;
 }
 
-nav ul li a:hover {
-    text-decoration: underline;
+tbody tr {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
 }
 
-main .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2em 1em;
+tbody tr:nth-child(even) {
+    background: #2d2d2d;
 }
 
-section {
-    margin-bottom: 2em;
+tbody tr:nth-child(odd) {
+    background: #252525;
 }
 
-section h2 {
-    font-size: 2em;
-    margin-bottom: 0.5em;
-    color: #ffd470;
+tbody tr:hover {
+    background: #3d3d3d;
+    border-left: 3px solid #ffd470;
+    transform: translateX(4px);
 }
 
-section p {
-    font-size: 1.2em;
+td {
+    padding: 1em 1.2em;
     color: #fefefe;
-    line-height: 1.6;
+    border-bottom: 1px solid #444;
+    transition: all 0.3s ease;
 }
 
-.button {
-    display: inline-block;
-    padding: 0.5em 1em;
-    background-color: #2d2d2d;
-    color: #ffffff;
-    text-decoration: none;
-    border-radius: 0.3em;
-    font-weight: bold;
-}
-
-.button:hover {
-    background-color: #1a1a1a;
-}
-
-footer {
-    background-color: #1a1a1a;
-    color: #ffffff;
-    text-align: center;
-    padding: 1em 0;
-}
-
-footer .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1em;
-}
-
-h2 {
+tbody tr:hover td {
     color: #ffd470;
+    transform: scale(1.02);
 }
 
-h1 {
+td code {
+    background: #1a1a1a;
     color: #ffd470;
-}
-
-p {
-    font-size: 1.2em;
-    color: #fefefe;
-    line-height: 1.6;
-}
-
-hr {
-    border: none;
-    height: 3px;
-    background-color: #333;
-    width: 63%;
-    margin: 10px auto;
-}
-
-.list {
-    list-style-type: none;
-    color: #ffffff;
-    padding-left: 0;
-}
-
-.list li {
-    position: relative;
-    padding-left: 20px;
-}
-
-li {
-    color: #ffffff;
-}
-
-/* .list li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    top: 0;
-} */
-
-a {
-    color: #5895f0;
-    text-decoration: none;
-}
-
-code {
-    background-color: #2d2d2d;
-    color: #ffffff;
-    font-family: 'Courier New', Courier, monospace;
     padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #333;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease;
+    border-radius: 6px;
+    border: 1px solid #444;
+    font-size: 0.9em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-code:hover {
-    background-color: #1a1a1a;
+@media (max-width: 768px) {
+    table {
+        border-radius: 8px;
+        font-size: 0.9em;
+    }
+    
+    thead th,
+    td {
+        padding: 0.8em 0.5em;
+    }
 }
