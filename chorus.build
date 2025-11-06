@@ -17,7 +17,7 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, acpi.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, ps2.o, vga.o, timer.o, serial.o, ramfs.o]
+    deps: [kasm.o, acpi.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, syscalls.o, vga.o, timer.o, serial.o, ramfs.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"
@@ -59,10 +59,10 @@ targets:
     cmds:
       - "${CC} ${CFLAGS} core/kernel/nvm/nvm.c -o ${@}"
 
-  ps2.o:
+  syscalls.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} core/drivers/ps2.c -o ${@}"
+      - "${CC} ${CFLAGS} core/kernel/nvm/syscalls.c -o ${@}"
 
   vga.o:
     deps: []
@@ -102,4 +102,4 @@ targets:
   run:
     phony: true
     cmds:
-      - "${QEMU} -m 3M -serial file:qemu.log -cdrom build_${DATE}.iso"
+      - "${QEMU} -m 124M -serial file:qemu.log -cdrom build_${DATE}.iso"

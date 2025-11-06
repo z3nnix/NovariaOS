@@ -14,8 +14,14 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-int counter = 0;
-char content[32];
+uint8_t nvm_bytecode[] = {
+    0x4E, 0x56, 0x4D, 0x30,  // NVM0
+    
+    0x02, 0x2a,              // short push
+    0x50, 0x01,              // syscall number one(exit)
+
+    0x00,                    // HALT
+};
 
 void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
@@ -45,4 +51,7 @@ void kmain(multiboot_info_t* mb_info) {
     pit_init();
     ramfs_init();
     nvm_init();
+
+    nvm_execute(nvm_bytecode, sizeof(nvm_bytecode));
+    pit_polling_loop();
 }
