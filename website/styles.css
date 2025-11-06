@@ -180,8 +180,7 @@ code:hover {
     background-color: #1a1a1a;
 }
 
-/* Стили для таблиц */
-table {
+#docs-content table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
@@ -193,12 +192,13 @@ table {
     border: 2px solid #ffd470;
 }
 
-thead {
+#docs-content table tr:first-child {
     background: linear-gradient(135deg, #ffd470 0%, #ffb347 100%);
 }
 
-thead th {
-    color: #1a1a1a;
+#docs-content table tr:first-child th,
+#docs-content table tr:first-child td {
+    color: #1a1a1a !important;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -208,39 +208,38 @@ thead th {
     border-bottom: 3px solid #1a1a1a;
 }
 
-tbody tr {
+#docs-content table tr:not(:first-child) {
     transition: all 0.3s ease;
     border-left: 3px solid transparent;
 }
 
-tbody tr:nth-child(even) {
+#docs-content table tr:nth-child(even):not(:first-child) {
     background: #2d2d2d;
 }
 
-tbody tr:nth-child(odd) {
+#docs-content table tr:nth-child(odd):not(:first-child) {
     background: #252525;
 }
 
-tbody tr:hover {
+#docs-content table tr:hover:not(:first-child) {
     background: #3d3d3d;
     border-left: 3px solid #ffd470;
     transform: translateX(4px);
 }
 
-td {
+#docs-content table td {
     padding: 1em 1.2em;
     color: #fefefe;
     border-bottom: 1px solid #444;
     transition: all 0.3s ease;
 }
 
-tbody tr:hover td {
+#docs-content table tr:hover:not(:first-child) td {
     color: #ffd470;
-    transform: scale(1.02);
+    padding-left: 1.4em;
 }
 
-/* Стили для ячеек с кодом внутри таблиц */
-td code {
+#docs-content table td code {
     background: #1a1a1a;
     color: #ffd470;
     padding: 4px 8px;
@@ -250,15 +249,28 @@ td code {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Адаптивность для мобильных устройств */
+#docs-content table {
+    border: none !important;
+}
+
+#docs-content table tr {
+    border: none !important;
+}
+
+#docs-content table td,
+#docs-content table th {
+    border: none !important;
+}
+
 @media (max-width: 768px) {
-    table {
+    #docs-content table {
         border-radius: 8px;
         font-size: 0.9em;
     }
     
-    thead th,
-    td {
+    #docs-content table td,
+    #docs-content table tr:first-child th,
+    #docs-content table tr:first-child td {
         padding: 0.8em 0.5em;
     }
 }
