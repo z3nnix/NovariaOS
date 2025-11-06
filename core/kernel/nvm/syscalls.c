@@ -10,6 +10,13 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
     
     switch(syscall_id) {
         case SYS_EXIT:
+            serial_print("Stack before exit: ");
+            for(int i = 0; i < proc->sp; i++) {
+                itoa(proc->stack[i], buffer, 10);
+                serial_print(buffer);
+                serial_print(" ");
+            }
+            serial_print("\n");
             if(proc->sp >= 1) {
                 proc->exit_code = proc->stack[proc->sp - 1];
                 serial_print("Process exited with code: ");

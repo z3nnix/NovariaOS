@@ -57,11 +57,16 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
     uint8_t opcode = proc->bytecode[proc->ip++];
     
     switch(opcode) {
+        // Basic:
         case 0x00: // HALT
             proc->active = false;
             proc->exit_code = 0;
             serial_print("Process halted\n");
             return false;
+        
+        case 0x01: // NOP
+            serial_print("NVM: NOP called\n");
+            break;
             
         case 0x02: // PUSH_BYTE
             if(proc->ip < proc->size) {
@@ -69,24 +74,223 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             }
             break;
             
-        case 0x03: // PUSH_SHORT
-            if(proc->ip + 1 < proc->size) {
-                uint8_t low = proc->bytecode[proc->ip++];
-                uint8_t high = proc->bytecode[proc->ip++];
-                int32_t value = (high << 8) | low;
-                // Sign extend for 16-bit value
-                if(value & 0x8000) value |= 0xFFFF0000;
+        case 0x03: // PUSH_SHORT (instrumented, little-endian)
+            if (proc->ip + 1 < proc->size) {
+                // read bytes
+                uint8_t low  = proc->bytecode[proc->ip++]; // младший байт
+                uint8_t high = proc->bytecode[proc->ip++]; // старший байт
+
+                // debug print: show raw bytes and ip/sp
+                char dbg[128];
+                serial_print("DEBUG PUSH_SHORT read: low=0x");
+                itoa(low, dbg, 16); serial_print(dbg);
+                serial_print(" high=0x");
+                itoa(high, dbg, 16); serial_print(dbg);
+                serial_print(" ip:"); itoa(proc->ip, dbg, 10); serial_print(dbg);
+                serial_print(" sp:"); itoa(proc->sp, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+
+                uint16_t u16 = (uint16_t)(((uint16_t)high << 8) | (uint16_t)low);
+                int32_t value = (int32_t)u16; // no sign extension
+
+                // debug value
+                serial_print("DEBUG PUSH_SHORT value (u16) = ");
+                itoa(u16, dbg, 10); serial_print(dbg);
+                serial_print(" (hex 0x"); itoa(u16, dbg, 16); serial_print(dbg);
+                serial_print(") -> stored as ");
+                itoa(value, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+
                 proc->stack[proc->sp++] = value;
+            } else {
+                serial_print("PUSH_SHORT: not enough bytes\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
             }
             break;
+
+
+        case 0x04: // POP
+            if(proc->sp > 0) {
+                int32_t popped_value = proc->stack[--proc->sp];
+            } else {
+                serial_print("Stack underflow in POP\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x05: // DUP
+            if(proc->sp == 0) {
+                serial_print("Stack underflow in DUP\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            if(proc->sp >= sizeof(proc->stack)/sizeof(proc->stack[0])) {
+                serial_print("Stack overflow in DUP\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
             
-        case 0x04: // PUSH_INT
-            if(proc->ip + 3 < proc->size) {
-                int32_t value = 0;
-                for(int i = 0; i < 4; i++) {
-                    value |= (proc->bytecode[proc->ip++] << (i * 8));
+            proc->stack[proc->sp] = proc->stack[proc->sp - 1];
+            proc->sp++;
+            break;
+        
+        case 0x06: // SWAP
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                proc->stack[proc->sp - 2] = top;
+                proc->stack[proc->sp - 1] = second;
+            } else {
+                serial_print("Stack underflow in SWAP\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        // Arithmetic:
+        case 0x10: // ADD
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result = top + second; 
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG ADD: ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" + ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" = ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in ADD\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x11: // SUB
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result = second - top;
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG SUB: ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" - ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" = ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in SUB\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x12: // MUL
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result = second * top;
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG SUB: ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" * ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" = ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in SUB\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x13: // DIV
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result;
+
+                if(top != 0) {
+                    result = second / top;
+                    
+                    proc->stack[proc->sp - 2] = result;
+                    proc->sp--;
+                    
+                    // Debug
+                    char dbg[64];
+                    serial_print("DEBUG DIV: ");
+                    itoa(second, dbg, 10); serial_print(dbg);
+                    serial_print(" / ");
+                    itoa(top, dbg, 10); serial_print(dbg);
+                    serial_print(" = ");
+                    itoa(result, dbg, 10); serial_print(dbg);
+                    serial_print("\n");
+                } else {
+                    serial_print("Zero division\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
                 }
-                proc->stack[proc->sp++] = value;
+            } else {
+                serial_print("Stack underflow in DIV\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x14: // MOD
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result = second % top;
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG MUL: ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" % ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" = ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in MUL\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
             }
             break;
             

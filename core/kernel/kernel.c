@@ -15,13 +15,25 @@
 #include <stdbool.h>
 
 uint8_t nvm_bytecode[] = {
-    0x4E, 0x56, 0x4D, 0x30,  // NVM0
-    
-    0x02, 0x2a,              // short push
-    0x50, 0x01,              // syscall number one(exit)
+    0x4E, 0x56, 0x4D, 0x30,  // NVM0 signature
 
-    0x00,                    // HALT
+    0x02, 0x0F,              // PUSH_BYTE 15
+    0x02, 0x1B,              // PUSH_BYTE 27
+    0x10,                    // ADD  -> 42
+
+    0x03, 0x00, 0x01,        // PUSH_SHORT 256  (0x0100 -> bytes: 0x00, 0x01)
+    0x03, 0xFE, 0x00,        // PUSH_SHORT 254  (0x00FE -> bytes: 0xFE, 0x00)
+    0x10,                    // ADD  -> 510
+
+    0x02, 0x0A,              // PUSH_BYTE 10
+    0x11,                    // SUB  -> 510
+    0x06,
+    0x14,
+
+    0x50, 0x01,
+    0x00                     // HALT
 };
+
 
 void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
