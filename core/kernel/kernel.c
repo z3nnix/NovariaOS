@@ -1,39 +1,14 @@
 #include <core/arch/multiboot.h>
-
 #include <core/kernel/kstd.h>
 #include <core/kernel/mem.h>
-
 #include <core/kernel/nvm/nvm.h>
-
 #include <core/drivers/serial.h>
 #include <core/drivers/vga.h>
 #include <core/drivers/timer.h>
-
 #include <core/fs/ramfs.h>
-
+#include <core/fs/initramfs.h>
 #include <stddef.h>
 #include <stdbool.h>
-
-uint8_t nvm_bytecode[] = {
-    0x4E, 0x56, 0x4D, 0x30,  // NVM0 signature
-
-    0x02, 0x0F,              // PUSH_BYTE 15
-    0x02, 0x1B,              // PUSH_BYTE 27
-    0x10,                    // ADD  -> 42
-
-    0x03, 0x00, 0x01,        // PUSH_SHORT 256  (0x0100 -> bytes: 0x00, 0x01)
-    0x03, 0xFE, 0x00,        // PUSH_SHORT 254  (0x00FE -> bytes: 0xFE, 0x00)
-    0x10,                    // ADD  -> 510
-
-    0x02, 0x0A,              // PUSH_BYTE 10
-    0x11,                    // SUB  -> 510
-    0x06,
-    0x14,
-
-    0x50, 0x01,
-    0x00                     // HALT
-};
-
 
 void kmain(multiboot_info_t* mb_info) {
     disable_cursor();
@@ -62,8 +37,44 @@ void kmain(multiboot_info_t* mb_info) {
     init_serial();
     pit_init();
     ramfs_init();
+    
+    initramfs_load(mb_info);
+    
     nvm_init();
-
-    nvm_execute(nvm_bytecode, sizeof(nvm_bytecode));
+    
+    // Execute programs from initramfs
+    size_t program_count = initramfs_get_count();
+    if (program_count > 0) {
+        for (size_t i = 0; i < program_count; i++) {
+            struct program* prog = initramfs_get_program(i);
+            if (prog && prog->size > 0) {
+                char buf[32];
+                int n = i;
+                char* p = buf;
+                if (n == 0) {
+                    *p++ = '0';
+                } else {
+                    char* start = p;
+                    while (n > 0) {
+                        *p++ = '0' + n % 10;
+                        n /= 10;
+                    }
+                    p--;
+                    while (start < p) {
+                        char temp = *start;
+                        *start = *p;
+                        *p = temp;
+                        start++;
+                        p--;
+                    }
+                }
+                *p = '\0';
+                
+                nvm_execute(prog->data, prog->size);
+            }
+        }
+    } else {
+        kprint(":: No programs found in initramfs\n", 14);
+    }
     pit_polling_loop();
 }

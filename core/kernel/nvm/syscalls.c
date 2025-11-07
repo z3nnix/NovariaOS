@@ -1,6 +1,6 @@
 #include <core/kernel/nvm/nvm.h>
 
-#define SYS_EXIT 0x01
+#define SYS_EXIT 0x00
 
 // Syscalls
 int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
