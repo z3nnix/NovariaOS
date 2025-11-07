@@ -5,6 +5,7 @@ def create_initramfs(app_dir, output_file)
   bin_files = Dir.glob(File.join(app_dir, "*.bin")).sort
   puts "Found #{bin_files.size} .bin files in #{app_dir}"
   
+  total_size = 0
   File.open(output_file, 'wb') do |out|
     bin_files.each do |bin_file|
       data = File.binread(bin_file)
@@ -15,10 +16,19 @@ def create_initramfs(app_dir, output_file)
       out.write([size].pack('N'))
       
       out.write(data)
+      
+      total_size += 4 + size
+      
+      padding = (4 - (size % 4)) % 4
+      if padding > 0
+        out.write("\0" * padding)
+        total_size += padding
+        puts "  Added #{padding} bytes padding"
+      end
     end
   end
   
-  puts "Created initramfs: #{output_file} (#{File.size(output_file)} bytes)"
+  puts "Created initramfs: #{output_file} (#{File.size(output_file)} bytes, total with headers: #{total_size} bytes)"
 end
 
 if ARGV[0] != nil
@@ -28,7 +38,7 @@ else
 end
 
 if ARGV[1] != nil
-  output_dir = ARGV[1]
+  output_file = ARGV[1]
 else
   output_file = "build/boot/initramfs"
 end

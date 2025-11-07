@@ -1,38 +1,58 @@
 #include <core/fs/ramfs.h>
+#include <core/kernel/kstd.h>
 
-char sectors[MAX_SECTORS][SECTOR_SIZE];
-bool used[MAX_SECTORS];
-int next_free = 0;
+static ramfs_sector_t sectors[MAX_SECTORS];
 
 void ramfs_init() {
     for(int i = 0; i < MAX_SECTORS; i++) {
-        used[i] = false;
+        sectors[i].used = false;
+        sectors[i].size = 0;
+        sectors[i].data[0] = '\0';
     }
     kprint(":: RamFS initialized\n", 7);
 }
 
-int ramfs_write(char* data) {
+int ramfs_write(const char* data, size_t size) {
+    if (size > SECTOR_SIZE) {
+        kprint("Error: Data too large for sector\n", 14);
+        return -1;
+    }
+    
     for(int i = 0; i < MAX_SECTORS; i++) {
-        if(!used[i]) {
-            strncpy(sectors[i], data, SECTOR_SIZE-1);
-            sectors[i][SECTOR_SIZE-1] = '\0';
-            used[i] = true;
+        if(!sectors[i].used) {
+            memcpy(sectors[i].data, data, size);
+            sectors[i].size = size;
+            sectors[i].used = true;
+            
             return i;
         }
     }
+    
+    kprint("Error: No free sectors in RamFS\n", 14);
     return -1;
 }
 
-char* ramfs_read(int sector) {
-    if(sector < 0 || sector >= MAX_SECTORS || !used[sector]) {
+const char* ramfs_read(int sector, size_t* size) {
+    if(sector < 0 || sector >= MAX_SECTORS || !sectors[sector].used) {
+        if (size) *size = 0;
         return NULL;
     }
-    return sectors[sector];
+    
+    if (size) *size = sectors[sector].size;
+    return sectors[sector].data;
 }
 
 void ramfs_delete(int sector) {
     if(sector >= 0 && sector < MAX_SECTORS) {
-        used[sector] = false;
-        sectors[sector][0] = '\0';
+        sectors[sector].used = false;
+        sectors[sector].size = 0;
+        sectors[sector].data[0] = '\0';
     }
+}
+
+size_t ramfs_get_size(int sector) {
+    if(sector < 0 || sector >= MAX_SECTORS || !sectors[sector].used) {
+        return 0;
+    }
+    return sectors[sector].size;
 }

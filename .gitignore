@@ -1,4 +1,5 @@
 build/boot/kernel.bin
+build/boot/initramfs
 build*.iso
 *.log
 *.bin

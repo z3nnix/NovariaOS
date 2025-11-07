@@ -6,8 +6,9 @@
 #include <core/arch/multiboot.h>
 
 struct program {
-    uint8_t *data;
+    const char* data;
     size_t size;
+    int ramfs_sector; 
 };
 
 void initramfs_load(multiboot_info_t* mb_info);
