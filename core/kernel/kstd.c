@@ -1,9 +1,5 @@
 #ifndef _KSTD_H
 #define _KSTD_H
-typedef _Bool bool;
-
-#define true 1
-#define false 0
 void newline(void);
 void vgaprint(const char *str, int color);
 

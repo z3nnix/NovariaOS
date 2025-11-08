@@ -1,4 +1,5 @@
 #include <core/drivers/timer.h>
+#include <core/arch/idt.h>
 
 void pit_init() {
     uint16_t divisor = 1193182 / 1000; // 1000 Hz
