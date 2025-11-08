@@ -1,5 +1,5 @@
-#ifndef _KSTD_H
-#define _KSTD_H
+#include <core/kernel/kstd.h>
+
 void newline(void);
 void vgaprint(const char *str, int color);
 
@@ -77,5 +77,3 @@ void kprint(const char *str, int color) {
         str++; // Move to the next character
     }
 }
-
-#endif // _KSTD_H
