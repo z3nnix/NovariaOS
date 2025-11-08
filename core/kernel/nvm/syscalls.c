@@ -1,4 +1,5 @@
 #include <core/kernel/nvm/nvm.h>
+#include <core/drivers/serial.h>
 
 #define SYS_EXIT 0x00
 

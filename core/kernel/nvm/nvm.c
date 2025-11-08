@@ -1,8 +1,12 @@
+#include <core/kernel/kstd.h>
+#include <core/drivers/serial.h>
 #include <core/kernel/nvm/nvm.h>
 
 nvm_process_t processes[MAX_PROCESSES];
 uint8_t current_process = 0;
 uint32_t timer_ticks = 0;
+
+int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc);
 
 void nvm_init() {
     for(int i = 0; i < MAX_PROCESSES; i++) {

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/mem.h>
 
 #define MAX_PROGRAMS 64
 

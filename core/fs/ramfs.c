@@ -1,5 +1,6 @@
 #include <core/fs/ramfs.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/mem.h>
 
 static ramfs_sector_t sectors[MAX_SECTORS];
 

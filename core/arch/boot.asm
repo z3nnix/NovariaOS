@@ -14,6 +14,14 @@ extern kmain
 
 start:
     cli                  ; Disable interrupts
+
+    finit           ; FPU init
+    fldcw [fpu_cw]  ; FPU load control word
+
+    mov eax, cr4
+    or eax, (1 << 9)   ; CR4[9] - OSFXSR (enable FXSAVE / FXSTOR) - This flag allows executing FPU instructions without raising #UD exception
+    mov cr4, eax
+
     mov esp, stack_space ; Set the stack pointer
     push ebx             ; Push multiboot info structure address
     call kmain           ; Call the main function
@@ -32,6 +40,9 @@ outb:
     mov al, [esp + 8]    ; Get the value from the arguments
     out dx, al           ; Write the value to the port
     ret
+
+section .data
+fpu_cw: dw 0x37f
 
 section .bss
 align 4
