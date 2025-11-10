@@ -222,7 +222,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 
                 // Debug
                 char dbg[64];
-                serial_print("DEBUG SUB: ");
+                serial_print("DEBUG MUL: ");
                 itoa(second, dbg, 10); serial_print(dbg);
                 serial_print(" * ");
                 itoa(top, dbg, 10); serial_print(dbg);
@@ -283,7 +283,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 
                 // Debug
                 char dbg[64];
-                serial_print("DEBUG MUL: ");
+                serial_print("DEBUG MOD: ");
                 itoa(second, dbg, 10); serial_print(dbg);
                 serial_print(" % ");
                 itoa(top, dbg, 10); serial_print(dbg);
@@ -291,7 +291,169 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 itoa(result, dbg, 10); serial_print(dbg);
                 serial_print("\n");
             } else {
-                serial_print("Stack underflow in MUL\n");
+                serial_print("Stack underflow in MOD\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+        
+        case 0x20: // CMP
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result;
+
+                if(second < top) {
+                    result = -1;
+                } else if (top == second) {
+                    result = 0;
+                } else {
+                    result = 1;
+                }
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG CMP: ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in CMP\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x21: // EQ
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result;
+
+                if(top == second) {
+                    result = 1;
+                } else {
+                    result = 0;
+                }
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG EQ: ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in EQ\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x22: // NEQ
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result;
+
+                if(top != second) {
+                    result = 1;
+                } else {
+                    result = 0;
+                }
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG NEQ: ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in NEQ\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x23: // GT
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result;
+
+                if(top < second) {
+                    result = 1;
+                } else {
+                    result = 0;
+                }
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG GT: ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in GT\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x24: // LT
+            if(proc->sp >= 2) {
+                int32_t top = proc->stack[proc->sp - 1];
+                int32_t second = proc->stack[proc->sp - 2];
+                int32_t result;
+
+                if(top > second) {
+                    result = 1;
+                } else {
+                    result = 0;
+                }
+                
+                proc->stack[proc->sp - 2] = result;
+                proc->sp--;
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG LT: ");
+                itoa(top, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(second, dbg, 10); serial_print(dbg);
+                serial_print(" | ");
+                itoa(result, dbg, 10); serial_print(dbg);
+                serial_print("\n");
+            } else {
+                serial_print("Stack underflow in LT\n");
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
