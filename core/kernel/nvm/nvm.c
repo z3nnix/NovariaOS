@@ -1,7 +1,7 @@
+#include <core/kernel/nvm/syscall.h>
 #include <core/kernel/kstd.h>
 #include <core/drivers/serial.h>
 #include <core/kernel/nvm/nvm.h>
-
 nvm_process_t processes[MAX_PROCESSES];
 uint8_t current_process = 0;
 uint32_t timer_ticks = 0;
@@ -87,13 +87,18 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             
         case 0x02: // PUSH_BYTE
             if(proc->ip < proc->size) {
-                uint8_t value = proc->bytecode[proc->ip++];
-                proc->stack[proc->sp++] = (int32_t)value;
+                uint8_t byte_value = proc->bytecode[proc->ip++];
+                int32_t stack_value = (int32_t)byte_value;
+                
+                proc->stack[proc->sp++] = stack_value;
                 
                 // debug
                 char dbg[64];
-                serial_print("DEBUG PUSH_BYTE: value=");
-                itoa(value, dbg, 10);
+                serial_print("DEBUG PUSH_BYTE: byte_value=0x");
+                itoa(byte_value, dbg, 16);
+                serial_print(dbg);
+                serial_print(" stack_value=");
+                itoa(stack_value, dbg, 10);
                 serial_print(dbg);
                 serial_print(" at ip=");
                 itoa(proc->ip, dbg, 10);
@@ -754,14 +759,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         case 0x50: // SYSCALL
             if(proc->ip < proc->size) {
                 uint8_t syscall_id = proc->bytecode[proc->ip++];
-                int32_t syscall_result = syscall_handler(syscall_id, proc);
-                
-                // For syscalls, which return argument - push that to stack
-                /* EXAMPLE:
-                if(syscall_id == SYS_GETC) {
-                     proc->stack[proc->sp++] = syscall_result;
-                 } 
-                */
+                syscall_handler(syscall_id, proc);
             }
             break;
             
