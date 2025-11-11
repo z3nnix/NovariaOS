@@ -1,4 +1,5 @@
 #include <core/kernel/nvm/nvm.h>
+#include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
 
 #define SYS_EXIT 0x00
@@ -43,3 +44,14 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
     
     return result;
 }
+
+/*
+EXAMPLE OF CHECK CAPS IN SYSCALL:
+
+            if (!caps_has_capability(proc, CAP_ALL)) {
+                serial_print("required caps not received\n");
+                result = -1;
+                break;
+            }
+
+*/

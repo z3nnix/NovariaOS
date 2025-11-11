@@ -14,19 +14,20 @@ void nvm_init() {
         processes[i].sp = 0;
         processes[i].ip = 0;
         processes[i].exit_code = 0;
+        processes[i].caps_count = 0;
     }
+
     kprint(":: NVM initialized\n", 7);
 }
 
 // Signature checking and process creation
-int nvm_create_process(uint8_t* bytecode, uint32_t size) {
+int nvm_create_process(uint8_t* bytecode, uint32_t size, uint16_t initial_caps[], uint8_t caps_count) {
     if(bytecode[0] != 0x4E || bytecode[1] != 0x56 || 
        bytecode[2] != 0x4D || bytecode[3] != 0x30) {
         serial_print("Invalid NVM signature\n");
         return -1;
     }
     
-    // Search free slot
     for(int i = 0; i < MAX_PROCESSES; i++) {
         if(!processes[i].active) {
             processes[i].bytecode = bytecode;
@@ -35,7 +36,15 @@ int nvm_create_process(uint8_t* bytecode, uint32_t size) {
             processes[i].sp = 0;
             processes[i].active = true;
             processes[i].exit_code = 0;
+            processes[i].pid = i;
+            processes[i].caps_count = 0;
 
+            // Initializing capabilities
+            for(int j = 0; j < caps_count && j < MAX_CAPS; j++) {
+                processes[i].capabilities[j] = initial_caps[j];
+            }
+            processes[i].caps_count = caps_count;
+            
             for(int j = 0; j < sizeof(processes[i].locals)/sizeof(processes[i].locals[0]); j++) {
                 processes[i].locals[j] = 0;
             }
@@ -790,16 +799,28 @@ void nvm_scheduler_tick() {
     }
 }
 
-void nvm_execute(uint8_t* bytecode, uint32_t size) {
-    int pid = nvm_create_process(bytecode, size);
+void nvm_execute(uint8_t* bytecode, uint32_t size, uint16_t* capabilities, uint8_t caps_count) {
+    int pid = nvm_create_process(bytecode, size, capabilities, caps_count);
     if(pid >= 0) {
         char buffer[32];
         serial_print("NVM process started with PID: ");
         itoa(pid, buffer, 10);
         serial_print(buffer);
+        serial_print(" | ");
+        itoa(caps_count, buffer, 10);
+        serial_print("CAPS: ");
+        
+        // print list of capabilities
+        for(int i = 0; i < caps_count; i++) {
+            itoa(capabilities[i], buffer, 16);
+            serial_print("0x");
+            serial_print(buffer);
+            if(i < caps_count - 1) serial_print(", ");
+        }
         serial_print("\n");
     }
 }
+
 
 // Function for get exit code
 int32_t nvm_get_exit_code(uint8_t pid) {

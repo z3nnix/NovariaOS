@@ -6,6 +6,7 @@
 
 #define MAX_PROCESSES 32768
 #define TIME_SLICE_MS 2
+#define MAX_CAPS 16
 
 // NVM procces structure
 typedef struct {
@@ -19,6 +20,11 @@ typedef struct {
     int32_t exit_code;      //  Exit code
 
     int32_t locals[256];    // 256 local variables (index 0-256)
+
+    // CAPS
+    uint16_t capabilities[MAX_CAPS];  // list of caps
+    uint8_t caps_count;               // count acitve caps
+    uint8_t pid;                      // Procces ID
 } nvm_process_t;
 
 extern nvm_process_t processes[MAX_PROCESSES];
@@ -26,7 +32,7 @@ extern uint8_t current_process;
 extern uint32_t timer_ticks;
 
 void nvm_init();
-void nvm_execute(uint8_t* bytecode, uint32_t size);
+void nvm_execute(uint8_t* bytecode, uint32_t size, uint16_t* capabilities, uint8_t caps_count);
 void nvm_scheduler_tick();
 
 #endif

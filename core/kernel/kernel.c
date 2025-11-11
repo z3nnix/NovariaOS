@@ -2,6 +2,7 @@
 #include <core/kernel/kstd.h>
 #include <core/kernel/mem.h>
 #include <core/kernel/nvm/nvm.h>
+#include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
 #include <core/drivers/vga.h>
 #include <core/drivers/timer.h>
@@ -70,7 +71,7 @@ void kmain(multiboot_info_t* mb_info) {
                 }
                 *p = '\0';
                 
-                nvm_execute(prog->data, prog->size);
+                nvm_execute(prog->data, prog->size, (uint16_t[]){CAP_ALL}, 1);
             }
         }
     } else {
