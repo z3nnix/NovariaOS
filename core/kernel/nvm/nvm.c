@@ -35,6 +35,10 @@ int nvm_create_process(uint8_t* bytecode, uint32_t size) {
             processes[i].sp = 0;
             processes[i].active = true;
             processes[i].exit_code = 0;
+
+            for(int j = 0; j < sizeof(processes[i].locals)/sizeof(processes[i].locals[0]); j++) {
+                processes[i].locals[j] = 0;
+            }
             
             char buffer[32];
             serial_print("Process created with PID: ");
@@ -92,8 +96,8 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         case 0x03: // PUSH_SHORT (instrumented, little-endian)
             if (proc->ip + 1 < proc->size) {
                 // read bytes
-                uint8_t low  = proc->bytecode[proc->ip++]; // младший байт
-                uint8_t high = proc->bytecode[proc->ip++]; // старший байт
+                uint8_t low  = proc->bytecode[proc->ip++];
+                uint8_t high = proc->bytecode[proc->ip++];
 
                 // debug print: show raw bytes and ip/sp
                 char dbg[128];
@@ -658,6 +662,70 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
+            }
+            break;
+
+        // Memory:
+        case 0x40: // LOAD xx
+            if(proc->ip < proc->size) {
+                uint8_t var_index = proc->bytecode[proc->ip++];
+                
+                // Check bounds
+                if(var_index < sizeof(proc->locals)/sizeof(proc->locals[0])) {
+                    int32_t value = proc->locals[var_index];
+                    
+                    // Check stack overflow
+                    if(proc->sp < sizeof(proc->stack)/sizeof(proc->stack[0])) {
+                        proc->stack[proc->sp++] = value;
+                        
+                        // Debug
+                        char dbg[64];
+                        serial_print("DEBUG LOAD: locals[");
+                        itoa(var_index, dbg, 10);
+                        serial_print(dbg);
+                        serial_print("] = ");
+                        itoa(value, dbg, 10);
+                        serial_print(dbg);
+                        serial_print("\n");
+                    } else {
+                        serial_print("LOAD: stack overflow\n");
+                        proc->exit_code = -1;
+                        proc->active = false;
+                        return false;
+                    }
+                } else {
+                    serial_print("LOAD: invalid variable index\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+            }
+            break;
+
+        case 0x41: // STORE xx
+            if(proc->ip < proc->size) {
+                uint8_t var_index = proc->bytecode[proc->ip++];
+                
+                // Check bounds and that stack has a value
+                if(var_index < sizeof(proc->locals)/sizeof(proc->locals[0]) && proc->sp > 0) {
+                    int32_t value = proc->stack[--proc->sp]; // pop value
+                    proc->locals[var_index] = value;
+                    
+                    // Debug
+                    char dbg[64];
+                    serial_print("DEBUG STORE: locals[");
+                    itoa(var_index, dbg, 10);
+                    serial_print(dbg);
+                    serial_print("] = ");
+                    itoa(value, dbg, 10);
+                    serial_print(dbg);
+                    serial_print("\n");
+                } else {
+                    serial_print("STORE: invalid index or stack underflow\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
             }
             break;
 

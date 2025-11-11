@@ -17,6 +17,8 @@ typedef struct {
     bool active;            //  Procces is active?
     uint32_t size;          //  Bytecode size
     int32_t exit_code;      //  Exit code
+
+    int32_t locals[256];    // 256 local variables (index 0-256)
 } nvm_process_t;
 
 extern nvm_process_t processes[MAX_PROCESSES];
