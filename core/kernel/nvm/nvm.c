@@ -74,7 +74,18 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             
         case 0x02: // PUSH_BYTE
             if(proc->ip < proc->size) {
-                proc->stack[proc->sp++] = (int32_t)proc->bytecode[proc->ip++];
+                uint8_t value = proc->bytecode[proc->ip++];
+                proc->stack[proc->sp++] = (int32_t)value;
+                
+                // debug
+                char dbg[64];
+                serial_print("DEBUG PUSH_BYTE: value=");
+                itoa(value, dbg, 10);
+                serial_print(dbg);
+                serial_print(" at ip=");
+                itoa(proc->ip, dbg, 10);
+                serial_print(dbg);
+                serial_print("\n");
             }
             break;
             
@@ -298,6 +309,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             }
             break;
         
+        // Сomparisons:
         case 0x20: // CMP
             if(proc->sp >= 2) {
                 int32_t top = proc->stack[proc->sp - 1];
@@ -458,6 +470,208 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->active = false;
                 return false;
             }
+            break;
+
+        // Flow control:
+        case 0x30: // JMP
+            if(proc->ip + 1 < proc->size) {
+                uint8_t low = proc->bytecode[proc->ip++];
+                uint8_t high = proc->bytecode[proc->ip++];
+                uint16_t addr = (uint16_t)((high << 8) | low);
+                
+                char dbg[64];
+                serial_print("DEBUG JMP: raw_addr=");
+                itoa(addr, dbg, 10);
+                serial_print(dbg);
+                serial_print(", current_ip=");
+                itoa(proc->ip, dbg, 10);
+                serial_print(dbg);
+                serial_print("\n");
+                
+                if(addr >= 4 && addr < proc->size) {
+                    proc->ip = addr;
+                    
+                    serial_print("DEBUG JMP to: ");
+                    itoa(addr, dbg, 10);
+                    serial_print(dbg);
+                    serial_print("\n");
+                } else {
+                    serial_print("JMP: invalid address\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+            }
+            break;
+        case 0x31: // JZ
+            if (proc->sp > 0) {
+                int32_t value = proc->stack[--proc->sp]; // pop value
+                if (proc->ip + 1 < proc->size) {
+                    uint8_t low = proc->bytecode[proc->ip++];
+                    uint8_t high = proc->bytecode[proc->ip++];
+                    uint16_t addr = (uint16_t)((high << 8) | low);
+                    
+                    if (value == 0) {
+                        if (addr >= 4 && addr < proc->size) {
+                            proc->ip = addr;
+
+                            // Debug
+                            char dbg[64];
+                            serial_print("DEBUG JZ to: ");
+                            itoa(addr, dbg, 10);
+                            serial_print(dbg);
+                            serial_print("\n");
+                        } else {
+                            serial_print("JZ: invalid address\n");
+                            proc->exit_code = -1;
+                            proc->active = false;
+                            return false;
+                        }
+                    }
+                } else {
+                    serial_print("JZ: not enough bytes for address\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+            } else {
+                serial_print("JZ: stack underflow\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x32: // JNZ
+            if (proc->sp > 0) {
+                int32_t value = proc->stack[--proc->sp]; // pop before test
+                if (proc->ip + 1 < proc->size) {
+                    uint8_t low = proc->bytecode[proc->ip++];
+                    uint8_t high = proc->bytecode[proc->ip++];
+                    uint16_t addr = (uint16_t)((high << 8) | low);
+                    
+                    if (value != 0) {
+                        if (addr >= 4 && addr < proc->size) {
+                            proc->ip = addr;
+
+                            // Debug
+                            char dbg[64];
+                            serial_print("DEBUG JNZ to: ");
+                            itoa(addr, dbg, 10);
+                            serial_print(dbg);
+                            serial_print("\n");
+                        } else {
+                            serial_print("JNZ: invalid address\n");
+                            proc->exit_code = -1;
+                            proc->active = false;
+                            return false;
+                        }
+                    }
+                } else {
+                    serial_print("JNZ: not enough bytes for address\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+            } else {
+                serial_print("JNZ: stack underflow\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x33: // CALL
+            if(proc->ip + 1 < proc->size) {
+                uint8_t low = proc->bytecode[proc->ip++];
+                uint8_t high = proc->bytecode[proc->ip++];
+                uint16_t addr = (uint16_t)((high << 8) | low);
+                
+                // Instruction pointer out of range
+                if(proc->sp < sizeof(proc->stack)/sizeof(proc->stack[0]) - 1) {
+                    proc->stack[proc->sp++] = proc->ip;
+                    
+                    if(addr >= 4 && addr < proc->size) {
+                        proc->ip = addr;
+                        
+                        // Debug
+                        char dbg[64];
+                        serial_print("DEBUG CALL to: ");
+                        itoa(addr, dbg, 10);
+                        serial_print(dbg);
+                        serial_print(", return to: ");
+                        itoa(proc->ip, dbg, 10);
+                        serial_print(dbg);
+                        serial_print("\n");
+                    } else {
+                        serial_print("CALL: invalid address\n");
+                        proc->exit_code = -1;
+                        proc->active = false;
+                        return false;
+                    }
+                } else {
+                    serial_print("CALL: stack overflow\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+            } else {
+                serial_print("CALL: not enough bytes for address\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        case 0x34: // RET
+            if(proc->sp > 0) {
+                uint16_t return_addr = (uint16_t)proc->stack[--proc->sp]; // pop return address
+                
+                // Debug
+                char dbg[64];
+                serial_print("DEBUG RET: return_addr=");
+                itoa(return_addr, dbg, 10);
+                serial_print(dbg);
+                serial_print(", sp=");
+                itoa(proc->sp, dbg, 10);
+                serial_print(dbg);
+                serial_print("\n");
+                
+                if(return_addr >= 4 && return_addr < proc->size) {
+                    proc->ip = return_addr;
+                    
+                    serial_print("DEBUG RET to: ");
+                    itoa(return_addr, dbg, 10);
+                    serial_print(dbg);
+                    serial_print("\n");
+                } else {
+                    serial_print("RET: invalid return address ");
+                    itoa(return_addr, dbg, 10);
+                    serial_print(dbg);
+                    serial_print("\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+            } else {
+                serial_print("RET: stack underflow\n");
+                proc->exit_code = -1;
+                proc->active = false;
+                return false;
+            }
+            break;
+
+        // System calls:
+        case 0x51: // BREAK
+            serial_print("BREAK: debug stop\n");
+            char dbg[64];
+            serial_print("IP: ");
+            itoa(proc->ip, dbg, 10);
+            serial_print(dbg);
+            serial_print(", SP: ");
+            itoa(proc->sp, dbg, 10);
+            serial_print(dbg);
+            serial_print("\n");
             break;
             
         case 0x50: // SYSCALL
