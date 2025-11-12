@@ -6,8 +6,20 @@
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
 
+uint16_t recipient;
 uint16_t port;
 uint8_t value;
+
+typedef struct {
+    uint16_t recipient;
+    uint16_t sender;
+    uint8_t content;
+} message_t;
+
+
+#define MAX_MESSAGES 32
+static message_t message_queue[MAX_MESSAGES];
+static int message_count = 0;
 
 // Syscalls
 int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
@@ -36,6 +48,110 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             proc->active = false;
             // Delete argument from stack
             if(proc->sp > 0) proc->sp--;
+            break;
+        
+        case SYS_MSG_SEND:
+            serial_print("DEBUG syscall msg_send\n");
+            if (proc->sp < 2) {
+                serial_print("Stack underflow for msg_send\n");
+                result = -1;
+                break;
+            }
+
+            recipient = proc->stack[proc->sp - 2] & 0xFFFF;
+            value = proc->stack[proc->sp - 1] & 0xFF;
+
+            if (message_count >= MAX_MESSAGES) {
+                serial_print("Message queue full\n");
+                result = -1;
+                break;
+            }
+
+            message_t msg;
+            msg.recipient = recipient;
+            msg.sender = proc->pid;
+            msg.content = value;
+            
+            message_queue[message_count] = msg;
+            message_count++;
+            
+            serial_print("Message sent: recipient=");
+            itoa(recipient, buffer, 10);
+            serial_print(buffer);
+            serial_print(", sender=");
+            itoa(proc->pid, buffer, 10);
+            serial_print(buffer);
+            serial_print(", content=0x");
+            itoa(value, buffer, 16);
+            serial_print(buffer);
+            serial_print("\n");
+            
+            for (int i = 0; i < MAX_PROCESSES; i++) {
+                if (processes[i].active && processes[i].pid == recipient && processes[i].blocked) {
+                    processes[i].blocked = false; 
+                    processes[i].wakeup_reason = 1;
+                    serial_print("Unblocked process ");
+                    itoa(recipient, buffer, 10);
+                    serial_print(buffer);
+                    serial_print(" due to incoming message\n");
+                    break;
+                }
+            }
+
+            proc->sp -= 2;
+            break;
+            
+        case SYS_MSG_RECEIVE:
+            serial_print("DEBUG syscall msg_receive from process ");
+            itoa(proc->pid, buffer, 10);
+            serial_print(buffer);
+            serial_print("\n");
+
+            int found_index = -1;
+            for (int i = 0; i < message_count; i++) {
+                if (message_queue[i].recipient == proc->pid) {
+                    found_index = i;
+                    break;
+                }
+            }
+            
+            if (found_index == -1) {
+                serial_print("No messages for process ");
+                itoa(proc->pid, buffer, 10);
+                serial_print(buffer);
+                serial_print(" - blocking process\n");
+                proc->blocked = true;
+                result = -1;
+                break;
+            }
+            
+            message_t received_msg = message_queue[found_index];
+            
+            for (int i = found_index; i < message_count - 1; i++) {
+                message_queue[i] = message_queue[i + 1];
+            }
+            message_count--;
+
+            if (proc->sp + 1 < 256) {
+                proc->stack[proc->sp] = received_msg.sender;
+                proc->stack[proc->sp + 1] = received_msg.content;
+                proc->sp += 2;
+            } else {
+                serial_print("Stack overflow in msg_receive\n");
+                result = -1;
+                break;
+            }
+            
+            serial_print("Message received: recipient=");
+            itoa(proc->pid, buffer, 10);
+            serial_print(buffer);
+            serial_print(", sender=");
+            itoa(received_msg.sender, buffer, 10);
+            serial_print(buffer);
+            serial_print(", content=0x");
+            itoa(received_msg.content, buffer, 16);
+            serial_print(buffer);
+            serial_print("\n");
             break;
 
         case SYS_PORT_IN_BYTE:
@@ -112,14 +228,3 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
     
     return result;
 }
-
-/*
-EXAMPLE OF CHECK CAPS IN SYSCALL:
-
-            if (!caps_has_capability(proc, CAP_ALL)) {
-                serial_print("required caps not received\n");
-                result = -1;
-                break;
-            }
-
-*/

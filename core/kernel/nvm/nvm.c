@@ -785,15 +785,29 @@ void nvm_scheduler_tick() {
     }
     
     uint8_t start = current_process;
+    uint8_t original = current_process;
+
     do {
         current_process = (current_process + 1) % MAX_PROCESSES;
-        if(processes[current_process].active) {
+        if(processes[current_process].active && !processes[current_process].blocked) {
             break;
         }
     } while(current_process != start);
     
-    if(processes[current_process].active) {
-        nvm_execute_instruction(&processes[current_process]);
+    if(processes[current_process].active && !processes[current_process].blocked) {
+        if (processes[current_process].ip < processes[current_process].size) {
+            nvm_execute_instruction(&processes[current_process]);
+        } else {
+            serial_print("Process ");
+            char buffer[32];
+            itoa(processes[current_process].pid, buffer, 10);
+            serial_print(buffer);
+            serial_print(" reached end of code - terminating\n");
+            processes[current_process].active = false;
+            processes[current_process].exit_code = 0;
+        }
+    } else {
+        current_process = original;
     }
 }
 
