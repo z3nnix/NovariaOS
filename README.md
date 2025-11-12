@@ -19,11 +19,16 @@ NovariaOS
 ├── LICENSE
 ├── README.md
 ├── apps
-│   └── hello.nvm.source
+│   ├── adder.asm
+│   ├── compartest.asm
+│   ├── flowcontroltest.asm
+│   ├── iotest.asm
+│   └── memtest.asm
 ├── build
 │   └── boot
 │       ├── grub
 │       │   └── grub.cfg
+│       ├── initramfs
 │       └── kernel.bin
 ├── chorus.build
 ├── core
@@ -35,8 +40,6 @@ NovariaOS
 │   │   ├── pause.c
 │   │   └── pause.h
 │   ├── drivers
-│   │   ├── keymap.h
-│   │   ├── ps2.c
 │   │   ├── serial.c
 │   │   ├── serial.h
 │   │   ├── timer.c
@@ -44,6 +47,8 @@ NovariaOS
 │   │   ├── vga.c
 │   │   └── vga.h
 │   ├── fs
+│   │   ├── initramfs.c
+│   │   ├── initramfs.h
 │   │   ├── ramfs.c
 │   │   └── ramfs.h
 │   └── kernel
@@ -53,24 +58,33 @@ NovariaOS
 │       ├── mem.c
 │       ├── mem.h
 │       └── nvm
+│           ├── caps.c
+│           ├── caps.h
 │           ├── nvm.c
-│           └── nvm.h
+│           ├── nvm.h
+│           ├── syscall.h
+│           └── syscalls.c
 ├── docs
 │   ├── 1.0-What-is-Novaria.md
 │   ├── 1.1-Our-goals.md
 │   ├── 1.2-Build-from-source.md
 │   ├── 2.0-What-is-NVM.md
-│   └── 3.0-What-is-RamFS
+│   ├── 2.1-Bytecode.md
+│   ├── 2.2-Syscalls.md
+│   ├── 2.3-Example-program.md
+│   ├── 2.4-Caps.md
+│   └── 3.0-What-is-RamFS.md
+├── initramfs-rebuild.rb
 ├── lib
 │   └── nc
 │       ├── stdbool.h
 │       ├── stdlib.h
 │       └── time.h
 ├── link.ld
-├── nvmtools.rb
 ├── qemu.log
 └── website
     ├── docs.html
+    ├── docsStyles.css
     ├── index.html
     └── styles.css
 ```
