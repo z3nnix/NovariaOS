@@ -467,7 +467,6 @@
                     // Clean up file name for display
                     a.textContent = item.name.replace(/-/g, ' ').replace('.md', '');
                     
-                    // Добавляем индикатор загруженного контента
                     if (contentCache.has(relativePath)) {
                         a.classList.add('preloaded');
                     }
@@ -527,7 +526,7 @@
                 renderDocsTree(),
                 preloadAllContent()
             ]);
-            и
+            
             console.log(`Preloaded ${contentCache.size} documentation files`);
        
             if (docsContent.querySelector('.content-placeholder')) {
