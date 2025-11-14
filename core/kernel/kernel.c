@@ -71,7 +71,7 @@ void kmain(multiboot_info_t* mb_info) {
                 }
                 *p = '\0';
                 
-                nvm_execute(prog->data, prog->size, (uint16_t[]){CAP_ALL}, 1);
+                nvm_execute(prog->data, prog->size, (uint16_t[]){CAP_DRV_ACCESS}, 1);
             }
         }
     } else {

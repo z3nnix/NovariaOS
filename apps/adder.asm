@@ -4,8 +4,8 @@
 .NVM0
 
 ; Calculate 5 + 3
-push byte 5
-push byte 3
+push 5
+push 3
 add
 
 ; Result (8) now on stack
