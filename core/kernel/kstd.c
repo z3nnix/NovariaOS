@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include <core/kernel/kstd.h>
 
 void newline(void);

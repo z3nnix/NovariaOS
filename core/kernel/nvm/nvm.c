@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include <core/kernel/nvm/syscall.h>
 #include <core/kernel/kstd.h>
 #include <core/drivers/serial.h>

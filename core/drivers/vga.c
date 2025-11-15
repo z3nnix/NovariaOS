@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include <core/drivers/vga.h>
 
 extern uint8_t inb(uint16_t port);

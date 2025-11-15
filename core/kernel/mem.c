@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include <core/kernel/mem.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include <core/drivers/serial.h>
 
 // Assuming outb and inb functions are defined elsewhere
