@@ -1,6 +1,6 @@
 ; SPDX-License-Identifier: LGPL-3.0-or-later
 
-bits 32
+bits 32 ; 32 bit architecture
 
 section .multiboot
 align 4
