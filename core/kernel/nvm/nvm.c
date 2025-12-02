@@ -245,6 +245,15 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             if(proc->sp >= 2) {
                 int32_t top = proc->stack[proc->sp - 1];
                 int32_t second = proc->stack[proc->sp - 2];
+                
+                if (top == 0) {
+                    serial_print("Process terminated: zero division handled\n");
+                    serial_print("Stack underflow in MOD\n");
+                    proc->exit_code = -1;
+                    proc->active = false;
+                    return false;
+                }
+
                 int32_t result = second % top;
                 
                 proc->stack[proc->sp - 2] = result;
