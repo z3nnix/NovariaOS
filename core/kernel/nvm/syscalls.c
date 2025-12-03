@@ -35,7 +35,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             if(proc->sp >= 1) {
                 proc->exit_code = proc->stack[proc->sp - 1];
                 itoa(proc->exit_code, buffer, 10);
-                LOG_DEBUG("Procces %d exited with code: %s\n", proc->pid, buffer);
+                LOG_DEBUG("Procces %d: exited with code: %s\n", proc->pid, buffer);
             } else {
                 proc->exit_code = 0;
             }
