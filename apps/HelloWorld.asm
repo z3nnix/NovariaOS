@@ -57,7 +57,7 @@ push 0x0721
 store_abs
 
 ; Exit
-push 0xDEADBEEF
+push 0
 syscall exit
 
 hlt

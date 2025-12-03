@@ -4,6 +4,7 @@
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
+#include <core/kernel/log.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
@@ -31,19 +32,10 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
     
     switch(syscall_id) {
         case SYS_EXIT:
-            serial_print("Stack before exit: ");
-            for(int i = 0; i < proc->sp; i++) {
-                itoa(proc->stack[i], buffer, 10);
-                serial_print(buffer);
-                serial_print(" ");
-            }
-            serial_print("\n");
             if(proc->sp >= 1) {
                 proc->exit_code = proc->stack[proc->sp - 1];
-                serial_print("Process exited with code: ");
                 itoa(proc->exit_code, buffer, 10);
-                serial_print(buffer);
-                serial_print("\n");
+                LOG_DEBUG("Procces %d exited with code: %s\n", proc->pid, buffer);
             } else {
                 proc->exit_code = 0;
             }
@@ -53,9 +45,8 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             break;
         
         case SYS_MSG_SEND:
-            serial_print("DEBUG syscall msg_send\n");
             if (proc->sp < 2) {
-                serial_print("Stack underflow for msg_send\n");
+                LOG_WARN("Procces %d: Stack underflow for msg_send\n", proc->pid);
                 result = -1;
                 break;
             }
@@ -64,7 +55,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             value = proc->stack[proc->sp - 1] & 0xFF;
 
             if (message_count >= MAX_MESSAGES) {
-                serial_print("Message queue full\n");
+                LOG_WARN("Procces %d: Message queue full\n", proc->pid);
                 result = -1;
                 break;
             }
@@ -76,26 +67,13 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             
             message_queue[message_count] = msg;
             message_count++;
-            
-            serial_print("Message sent: recipient=");
-            itoa(recipient, buffer, 10);
-            serial_print(buffer);
-            serial_print(", sender=");
-            itoa(proc->pid, buffer, 10);
-            serial_print(buffer);
-            serial_print(", content=0x");
-            itoa(value, buffer, 16);
-            serial_print(buffer);
-            serial_print("\n");
-            
+
             for (int i = 0; i < MAX_PROCESSES; i++) {
                 if (processes[i].active && processes[i].pid == recipient && processes[i].blocked) {
                     processes[i].blocked = false; 
                     processes[i].wakeup_reason = 1;
-                    serial_print("Unblocked process ");
-                    itoa(recipient, buffer, 10);
-                    serial_print(buffer);
-                    serial_print(" due to incoming message\n");
+
+                    LOG_DEBUG("Unblocked procces %d due to incoming message", buffer);
                     break;
                 }
             }
@@ -104,11 +82,6 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             break;
             
         case SYS_MSG_RECEIVE:
-            serial_print("DEBUG syscall msg_receive from process ");
-            itoa(proc->pid, buffer, 10);
-            serial_print(buffer);
-            serial_print("\n");
-
             int found_index = -1;
             for (int i = 0; i < message_count; i++) {
                 if (message_queue[i].recipient == proc->pid) {
@@ -122,6 +95,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 itoa(proc->pid, buffer, 10);
                 serial_print(buffer);
                 serial_print(" - blocking process\n");
+                LOG_DEBUG("Procces %d: No messages for process - blocking process\n", proc->pid);
                 proc->blocked = true;
                 result = -1;
                 break;
@@ -139,91 +113,50 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 proc->stack[proc->sp + 1] = received_msg.content;
                 proc->sp += 2;
             } else {
-                serial_print("Stack overflow in msg_receive\n");
+                LOG_DEBUG("Procces %d: Stack overflow in msg_receive\n", proc->pid);
                 result = -1;
                 break;
             }
-            
-            serial_print("Message received: recipient=");
+
             itoa(proc->pid, buffer, 10);
-            serial_print(buffer);
-            serial_print(", sender=");
-            itoa(received_msg.sender, buffer, 10);
-            serial_print(buffer);
-            serial_print(", content=0x");
-            itoa(received_msg.content, buffer, 16);
-            serial_print(buffer);
-            serial_print("\n");
+            LOG_DEBUG("Procces %d: Message received. sender=%s. Unblock procces\n", proc->pid, buffer);
             break;
 
         case SYS_PORT_IN_BYTE:
             if (!caps_has_capability(proc, CAP_DRV_ACCESS)) {
-                serial_print("required caps not received\n");
+                LOG_WARN("Procces %d: Terminate procces - required caps not received.\n", proc->pid);
                 result = -1;
                 break;
             }
-
-            serial_print("DEBUG syscall inb: sp=");
-            itoa(proc->sp, buffer, 10);
-            serial_print(buffer);
-            serial_print(" stack contents: ");
-            for(int i = 0; i < proc->sp; i++) {
-                itoa(proc->stack[i], buffer, 16);
-                serial_print("0x");
-                serial_print(buffer);
-                serial_print(" ");
-            }
-            serial_print("\n");
             
             if (proc->sp == 0) {
-                serial_print("ERROR: Stack empty for inb\n");
+                LOG_WARN("Procces %d: Stack empty for inb\n", proc->pid);
                 result = -1;
                 break;
             }
             port = proc->stack[proc->sp - 1];
-            
-            serial_print("DEBUG: Reading from port 0x");
-            itoa(port, buffer, 16);
-            serial_print(buffer);
-            serial_print("\n");
-            
             value = inb(port);
-            
-            serial_print("DEBUG: inb returned: 0x");
-            itoa(value, buffer, 16);
-            serial_print(buffer);
-            serial_print("\n");
             
             proc->stack[proc->sp - 1] = (int16_t)value;
             break;
 
         case SYS_PORT_OUT_BYTE:
             if (proc->sp < 2) {
-                serial_print("Stack underflow for outb\n");
+                LOG_WARN("Procces %d: Stack underflow for outb\n", proc->pid);
                 result = -1;
                 break;
             }
             
             port = proc->stack[proc->sp - 2] & 0xFFFF;
             value = proc->stack[proc->sp - 1] & 0xFF;
-            
-            serial_print("DEBUG outb: port=0x");
-            itoa(port, buffer, 16);
-            serial_print(buffer);
-            serial_print(" value=0x");
-            itoa(value, buffer, 16);
-            serial_print(buffer);
-            serial_print("\n");
-            
+
             outb(port, value);
             proc->sp -= 2;
             break;
 
         default:
-            serial_print("Unknown syscall: ");
             itoa(syscall_id, buffer, 10);
-            serial_print(buffer);
-            serial_print("\n");
+            LOG_WARN("Procces %d: unknown syscall", proc->pid);
             proc->exit_code = -1;
             proc->active = false;
     }
