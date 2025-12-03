@@ -44,6 +44,10 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             if(proc->sp > 0) proc->sp--;
             break;
         
+        case SYS_EXEC:
+            LOG_WARN("Procces %d: Exec syscall was called. Ignore");
+            break;
+
         case SYS_MSG_SEND:
             if (proc->sp < 2) {
                 LOG_WARN("Procces %d: Stack underflow for msg_send\n", proc->pid);
