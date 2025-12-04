@@ -79,5 +79,8 @@ void kmain(multiboot_info_t* mb_info) {
     } else {
         kprint(":: No programs found in initramfs\n", 14);
     }
-    pit_polling_loop();
+    
+    while(true) {
+        nvm_scheduler_tick();
+    }
 }
