@@ -107,3 +107,20 @@ void disable_cursor() {
     outb(0x3D4, 0x0A);
     outb(0x3D5, 0x20); // Disable cursor by setting cursor start scanline bit 5 to 1
 }
+
+// Handle backspace - delete character at cursor position
+void vga_backspace(void) {
+    if (current_loc >= BYTES_FOR_EACH_ELEMENT) {
+        // Move back one character
+        current_loc -= BYTES_FOR_EACH_ELEMENT;
+        
+        // Replace with space
+        video[current_loc] = ' ';
+        video[current_loc + 1] = 0x07;
+        
+        // Update cursor position
+        int x = (current_loc / BYTES_FOR_EACH_ELEMENT) % COLUMNS_IN_LINE;
+        int y = (current_loc / BYTES_FOR_EACH_ELEMENT) / COLUMNS_IN_LINE;
+        terminal_set_cursor(x, y);
+    }
+}

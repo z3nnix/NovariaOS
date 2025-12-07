@@ -8,13 +8,17 @@
 #include <core/drivers/serial.h>
 #include <core/drivers/vga.h>
 #include <core/drivers/timer.h>
+#include <core/drivers/keyboard.h>
+#include <core/kernel/shell.h>
 #include <core/fs/ramfs.h>
 #include <core/fs/initramfs.h>
+#include <core/fs/vfs.h>
+#include <userspace/userspace_init.h>
 #include <stddef.h>
 #include <stdbool.h>
 
 void kmain(multiboot_info_t* mb_info) {
-    disable_cursor();
+    enable_cursor();
 
     const char* ascii_art[] = {
         " _   _                      _        ___  ____  ",
@@ -40,10 +44,15 @@ void kmain(multiboot_info_t* mb_info) {
     init_serial();
     pit_init();
     ramfs_init();
+    vfs_init();
+    keyboard_init();
     
     initramfs_load(mb_info);
     
     nvm_init();
+    
+    // Initialize userspace programs
+    userspace_init_programs();
     
     // Execute programs from initramfs
     size_t program_count = initramfs_get_count();
@@ -76,10 +85,33 @@ void kmain(multiboot_info_t* mb_info) {
                 nvm_execute(prog->data, prog->size, (uint16_t[]){CAP_ALL}, 1);
             }
         }
+        
+        // Wait for all initramfs programs to complete before starting shell
+        bool any_active = true;
+        int max_cycles = 100000; // Prevent infinite loop
+        int cycles = 0;
+        while (any_active && cycles < max_cycles) {
+            any_active = false;
+            for (int i = 0; i < MAX_PROCESSES; i++) {
+                if (nvm_is_process_active(i)) {
+                    any_active = true;
+                    break;
+                }
+            }
+            if (any_active) {
+                nvm_scheduler_tick();
+                cycles++;
+            }
+        }
     } else {
         kprint(":: No programs found in initramfs\n", 14);
     }
     
+    // Start the shell
+    shell_init();
+    shell_run();
+    
+    // If shell exits, continue with scheduler
     while(true) {
         nvm_scheduler_tick();
     }

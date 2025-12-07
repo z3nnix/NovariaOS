@@ -587,18 +587,26 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
                 if((addr >= 0x100000 && addr < 0xFFFFFFFF) || 
                 (addr >= 0xB8000 && addr <= 0xB8FA0)) {
-                    *(int32_t*)addr = value;
+                    // Special handling for VGA text buffer - write only 16 bits (char + attribute)
+                    if (addr >= 0xB8000 && addr <= 0xB8FA0) {
+                        *(uint16_t*)addr = (uint16_t)(value & 0xFFFF);
+                        
+                        // Debug VGA writes
+                        char dbg[64];
+                        serial_print("VGA WRITE: addr=0x");
+                        itoa(addr, dbg, 16);
+                        serial_print(dbg);
+                        serial_print(" <- value=0x");
+                        itoa(value, dbg, 16);
+                        serial_print(dbg);
+                        serial_print(" (char='");
+                        char ch[2] = {(char)(value & 0xFF), 0};
+                        serial_print(ch);
+                        serial_print("')\n");
+                    } else {
+                        *(int32_t*)addr = value;
+                    }
                     proc->sp -= 2;
-                    
-                    // Debug TODO: switch to log.h
-                    // char dbg[64];
-                    // serial_print("DEBUG STORE_ABS: addr=0x");
-                    // itoa(addr, dbg, 16);
-                    // serial_print(dbg);
-                    // serial_print(" <- value=0x");
-                    // itoa(value, dbg, 16);
-                    // serial_print(dbg);
-                    // serial_print("\n");
                 } else {
                     LOG_WARN("Procces %d: Invalid memory address in STORE_ABS\n", proc->pid);
                     proc->exit_code = -1;
@@ -662,15 +670,26 @@ void nvm_scheduler_tick() {
     } while(current_process != start);
     
     if(processes[current_process].active && !processes[current_process].blocked) {
-        if (processes[current_process].ip < processes[current_process].size) {
-            nvm_execute_instruction(&processes[current_process]);
-        } else {
-            char buffer[32];
-            itoa(processes[current_process].pid, buffer, 10);
+        // Execute multiple instructions per tick for better performance
+        for(int i = 0; i < 100; i++) {
+            if (processes[current_process].ip < processes[current_process].size && 
+                processes[current_process].active && 
+                !processes[current_process].blocked) {
+                if(!nvm_execute_instruction(&processes[current_process])) {
+                    break; // Stop if instruction returns false (halt, error, etc)
+                }
+            } else {
+                if(processes[current_process].ip >= processes[current_process].size && 
+                   processes[current_process].active) {
+                    char buffer[32];
+                    itoa(processes[current_process].pid, buffer, 10);
 
-            LOG_WARN("Procces %s: Reached end of code - terminating\n", buffer);
-            processes[current_process].active = false;
-            processes[current_process].exit_code = 0;
+                    LOG_WARN("Procces %s: Reached end of code - terminating\n", buffer);
+                    processes[current_process].active = false;
+                    processes[current_process].exit_code = 0;
+                }
+                break;
+            }
         }
     } else {
         current_process = original;

@@ -17,5 +17,6 @@
 #define SYS_MSG_RECEIVE     0x0A
 #define SYS_PORT_IN_BYTE    0x0B
 #define SYS_PORT_OUT_BYTE   0x0C
+#define SYS_PRINT           0x0D
 
 #endif

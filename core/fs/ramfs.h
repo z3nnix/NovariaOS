@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define MAX_SECTORS 256
-#define SECTOR_SIZE 512
+#define SECTOR_SIZE 4096
 
 typedef struct {
     char data[SECTOR_SIZE];
