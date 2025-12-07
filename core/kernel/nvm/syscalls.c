@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include <stddef.h>
 #include <core/kernel/nvm/syscall.h>
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
 #include <core/kernel/log.h>
+#include <core/kernel/mem.h>
+#include <core/fs/vfs.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
@@ -146,7 +149,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
 
         case SYS_PORT_OUT_BYTE:
             if (proc->sp < 2) {
-                LOG_WARN("Procces %d: Stack underflow for outb\n", proc->pid);
+                LOG_WARN("Procces %d: Stack underflow for outb\\n", proc->pid);
                 result = -1;
                 break;
             }
@@ -156,6 +159,137 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
 
             outb(port, value);
             proc->sp -= 2;
+            break;
+
+        case SYS_PRINT:
+            // Print a single character using kprint
+            if (proc->sp < 1) {
+                LOG_WARN("Procces %d: Stack underflow for print\\n", proc->pid);
+                result = -1;
+                break;
+            }
+            
+            value = proc->stack[proc->sp - 1] & 0xFF;
+            char print_char[2] = {(char)value, 0};
+            kprint(print_char, 15);
+            proc->sp -= 1;
+            break;
+
+        case SYS_CREATE:
+            // Create a file: filename_addr, data_addr, size
+            if (proc->sp < 3) {
+                LOG_WARN("Procces %d: Stack underflow for create\\n", proc->pid);
+                result = -1;
+                break;
+            }
+            
+            uint32_t filename_addr = (uint32_t)proc->stack[proc->sp - 3];
+            uint32_t data_addr = (uint32_t)proc->stack[proc->sp - 2];
+            uint32_t file_size = (uint32_t)proc->stack[proc->sp - 1];
+            
+            // Check if addresses are valid (simple validation)
+            if (filename_addr < 0x100000 || data_addr < 0x100000) {
+                LOG_WARN("Procces %d: Invalid address for create\\n", proc->pid);
+                result = -1;
+                proc->sp -= 3;
+                break;
+            }
+            
+            result = vfs_create((const char*)filename_addr, (const char*)data_addr, file_size);
+            
+            proc->sp -= 3;
+            if (proc->sp < STACK_SIZE) {
+                proc->stack[proc->sp++] = result;
+            }
+            break;
+
+        case SYS_WRITE:
+            // Write to existing file: filename_addr, data_addr, size
+            if (proc->sp < 3) {
+                LOG_WARN("Procces %d: Stack underflow for write\\n", proc->pid);
+                result = -1;
+                break;
+            }
+            
+            filename_addr = (uint32_t)proc->stack[proc->sp - 3];
+            data_addr = (uint32_t)proc->stack[proc->sp - 2];
+            file_size = (uint32_t)proc->stack[proc->sp - 1];
+            
+            if (filename_addr < 0x100000 || data_addr < 0x100000) {
+                LOG_WARN("Procces %d: Invalid address for write\\n", proc->pid);
+                result = -1;
+                proc->sp -= 3;
+                break;
+            }
+            
+            // Write is same as create (overwrites)
+            result = vfs_create((const char*)filename_addr, (const char*)data_addr, file_size);
+            
+            proc->sp -= 3;
+            if (proc->sp < STACK_SIZE) {
+                proc->stack[proc->sp++] = result;
+            }
+            break;
+
+        case SYS_READ:
+            // Read file: filename_addr, buffer_addr, maxsize
+            if (proc->sp < 3) {
+                LOG_WARN("Procces %d: Stack underflow for read\\n", proc->pid);
+                result = -1;
+                break;
+            }
+            
+            filename_addr = (uint32_t)proc->stack[proc->sp - 3];
+            uint32_t buffer_addr = (uint32_t)proc->stack[proc->sp - 2];
+            uint32_t max_size = (uint32_t)proc->stack[proc->sp - 1];
+            
+            if (filename_addr < 0x100000 || buffer_addr < 0x100000) {
+                LOG_WARN("Procces %d: Invalid address for read\\n", proc->pid);
+                result = -1;
+                proc->sp -= 3;
+                break;
+            }
+            
+            size_t read_size = 0;
+            const char* file_data = vfs_read((const char*)filename_addr, &read_size);
+            
+            if (file_data) {
+                size_t copy_size = (read_size < max_size) ? read_size : max_size;
+                memcpy((void*)buffer_addr, file_data, copy_size);
+                result = copy_size;
+            } else {
+                result = -1;
+            }
+            
+            proc->sp -= 3;
+            if (proc->sp < STACK_SIZE) {
+                proc->stack[proc->sp++] = result;
+            }
+            break;
+
+        case SYS_DELETE:
+            // Delete file: filename_addr
+            if (proc->sp < 1) {
+                LOG_WARN("Procces %d: Stack underflow for delete\\n", proc->pid);
+                result = -1;
+                break;
+            }
+            
+            filename_addr = (uint32_t)proc->stack[proc->sp - 1];
+            
+            if (filename_addr < 0x100000) {
+                LOG_WARN("Procces %d: Invalid address for delete\\n", proc->pid);
+                result = -1;
+                proc->sp -= 1;
+                break;
+            }
+            
+            result = vfs_delete((const char*)filename_addr);
+            
+            proc->sp -= 1;
+            if (proc->sp < STACK_SIZE) {
+                proc->stack[proc->sp++] = result;
+            }
             break;
 
         default:

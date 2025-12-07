@@ -14,4 +14,9 @@ extern void* allocateMemory(size_t size);
 extern void freeMemory(void* ptr);
 extern void mm_test();
 extern void pause();
+
+// Aliases for convenience
+#define kmalloc allocateMemory
+#define kfree freeMemory
+
 #endif
