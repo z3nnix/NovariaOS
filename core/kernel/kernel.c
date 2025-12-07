@@ -13,7 +13,7 @@
 #include <core/fs/ramfs.h>
 #include <core/fs/initramfs.h>
 #include <core/fs/vfs.h>
-#include <userspace/userspace_init.h>
+#include <usr/userspace_init.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -85,24 +85,6 @@ void kmain(multiboot_info_t* mb_info) {
                 nvm_execute(prog->data, prog->size, (uint16_t[]){CAP_ALL}, 1);
             }
         }
-        
-        // Wait for all initramfs programs to complete before starting shell
-        bool any_active = true;
-        int max_cycles = 100000; // Prevent infinite loop
-        int cycles = 0;
-        while (any_active && cycles < max_cycles) {
-            any_active = false;
-            for (int i = 0; i < MAX_PROCESSES; i++) {
-                if (nvm_is_process_active(i)) {
-                    any_active = true;
-                    break;
-                }
-            }
-            if (any_active) {
-                nvm_scheduler_tick();
-                cycles++;
-            }
-        }
     } else {
         kprint(":: No programs found in initramfs\n", 14);
     }
@@ -111,7 +93,7 @@ void kmain(multiboot_info_t* mb_info) {
     shell_init();
     shell_run();
     
-    // If shell exits, continue with scheduler
+    // If shell not exits:
     while(true) {
         nvm_scheduler_tick();
     }

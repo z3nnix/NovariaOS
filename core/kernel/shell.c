@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+// This is a temporary shell. In the near future, it will be rewritten in a language that compiles to NVM.
+
 #include <core/kernel/shell.h>
 #include <core/kernel/kstd.h>
 #include <core/drivers/keyboard.h>
@@ -235,9 +237,8 @@ static void execute_command(const char* command) {
                 kprint("\n", 12);
             }
         } else {
-            kprint("\nUnknown command: ", 12);
-            kprint(argv[0], 12);
-            kprint("\nType 'help' for available commands or 'progs' for programs.\n", 7);
+            kprint(argv[0], 7);
+            kprint(": command not found\n", 7);
         }
     }
 }
@@ -256,7 +257,10 @@ void shell_run(void) {
         nvm_scheduler_tick();
         
         // Print prompt
-        kprint("novaria> ", 11);
+        kprint("(host)-[", 7);
+        kprint("/", 2);
+        kprint("] ", 7);
+        kprint("# ", 2);
         
         // Read command
         keyboard_getline(command, MAX_COMMAND_LENGTH);

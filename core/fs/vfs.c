@@ -111,7 +111,6 @@ void vfs_list(void) {
     }
     
     if (count == 0) {
-        kprint("No files in filesystem\n", 7);
         return;
     }
     

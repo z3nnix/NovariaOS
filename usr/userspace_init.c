@@ -11,6 +11,7 @@ extern int cat_main(int argc, char** argv);
 extern int rm_main(int argc, char** argv);
 extern int write_main(int argc, char** argv);
 extern int nova_main(int argc, char** argv);
+extern int uname_main(int argc, char** argv);
 
 // Register all userspace programs
 void userspace_init_programs(void) {
@@ -23,6 +24,7 @@ void userspace_init_programs(void) {
     userspace_register("rm", rm_main);
     userspace_register("write", write_main);
     userspace_register("nova", nova_main);
+    userspace_register("uname", uname_main);
     
     kprint(":: Userspace programs registered\n", 7);
 }

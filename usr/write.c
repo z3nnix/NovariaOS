@@ -14,7 +14,7 @@ static int strlen(const char* str) {
 
 int write_main(int argc, char** argv) {
     if (argc < 3) {
-        kprint("\nUsage: write <filename> <content>\n\n", 12);
+        kprint("Usage: write <filename> <content>\n\n", 12);
         return 1;
     }
     
@@ -36,16 +36,13 @@ int write_main(int argc, char** argv) {
     int result = vfs_create(argv[1], content, pos);
     
     if (result >= 0) {
-        kprint("\nFile '", 7);
-        kprint(argv[1], 11);
-        kprint("' written successfully\n\n", 7);
         return 0;
     } else if (result == -1) {
-        kprint("\nError: Filename too long\n\n", 12);
+        kprint("Error: Filename too long\n\n", 12);
     } else if (result == -2) {
-        kprint("\nError: File too large\n\n", 12);
+        kprint("Error: File too large\n\n", 12);
     } else {
-        kprint("\nError: No space left\n\n", 12);
+        kprint("Error: No space left\n\n", 12);
     }
     
     return 1;

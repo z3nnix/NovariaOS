@@ -1,0 +1,1 @@
+Absolutely all programs here must be written in a language that compiles in NVM, but temporary programs were written as a temporary measure. Now everything is in the kernel, which is not right, but it will be replaced.
