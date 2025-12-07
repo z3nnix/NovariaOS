@@ -17,7 +17,7 @@ void reverse(char* str, int length) {
     }
 }
 
-void strncpy(char *dest, const char *src, unsigned int n) {
+char* strncpy(char *dest, const char *src, unsigned int n) {
     unsigned int i = 0;
     while (i < n && src[i] != '\0') {
         dest[i] = src[i];
@@ -27,6 +27,7 @@ void strncpy(char *dest, const char *src, unsigned int n) {
         dest[i] = '\0';
         i++;
     }
+    return dest;
 }
 
 

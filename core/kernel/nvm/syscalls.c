@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include <stddef.h>
 #include <core/kernel/nvm/syscall.h>
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
 #include <core/kernel/log.h>
+#include <core/kernel/mem.h>
+#include <core/fs/vfs.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
@@ -192,7 +195,6 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            extern int vfs_create(const char* filename, const char* data, size_t size);
             result = vfs_create((const char*)filename_addr, (const char*)data_addr, file_size);
             
             proc->sp -= 3;
@@ -248,13 +250,11 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            extern const char* vfs_read(const char* filename, size_t* size);
             size_t read_size = 0;
             const char* file_data = vfs_read((const char*)filename_addr, &read_size);
             
             if (file_data) {
                 size_t copy_size = (read_size < max_size) ? read_size : max_size;
-                extern void memcpy(void* dest, const void* src, size_t n);
                 memcpy((void*)buffer_addr, file_data, copy_size);
                 result = copy_size;
             } else {
@@ -284,7 +284,6 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            extern int vfs_delete(const char* filename);
             result = vfs_delete((const char*)filename_addr);
             
             proc->sp -= 1;
