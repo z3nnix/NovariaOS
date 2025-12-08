@@ -1,7 +1,5 @@
 ; SPDX-License-Identifier: LGPL-3.0-or-later
 
-bits 32
-
 section .multiboot
 align 4
     dd 0x1BADB002               ; magic
@@ -9,6 +7,7 @@ align 4
     dd -(0x1BADB002 + 0x00000003) ; checksum
 
 section .text
+bits 32
 global start
 global inb
 global outb

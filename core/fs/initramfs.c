@@ -33,8 +33,6 @@ void initramfs_load(multiboot_info_t* mb_info) {
     
     kprint(":: Loading initramfs..\n", 7);
     
-    ramfs_init();
-    
     size_t offset = 0;
     program_count = 0;
     

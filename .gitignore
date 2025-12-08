@@ -1,5 +1,6 @@
 build/boot/kernel.bin
 build/boot/initramfs
+build/boot/data.iso
 build*.iso
 *.log
 *.bin

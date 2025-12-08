@@ -8,12 +8,15 @@
 #include <core/drivers/vga.h>
 #include <core/kernel/mem.h>
 #include <core/fs/initramfs.h>
-#include <core/fs/vfs.h>
+#include <core/fs/iso9660.h>
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/kernel/userspace.h>
 
 #define MAX_COMMAND_LENGTH 256
+#define MAX_PATH_LENGTH 64
+
+static char current_working_directory[MAX_PATH_LENGTH] = "/";
 
 // Helper function to compare strings
 static int strcmp(const char* str1, const char* str2) {
@@ -53,6 +56,13 @@ static void cmd_help(void) {
     kprint("  list     - List loaded NVM programs\n", 7);
     kprint("  run      - Run a NVM program by index\n", 7);
     kprint("  progs    - List userspace programs\n", 7);
+    kprint("  pwd      - Print working directory\n", 7);
+    kprint("\nISO9660 commands:\n", 10);
+    kprint("  isols    - List files in ISO9660 directory\n", 7);
+    kprint("  isocat   - Show ISO9660 file content\n", 7);
+    kprint("\nKeyboard shortcuts: (may unstable now)\n", 10);
+    kprint("  Ctrl+Up     - Scroll screen up\n", 7);
+    kprint("  Ctrl+Down   - Scroll screen down\n", 7);
     kprint("\nUserspace programs:\n", 10);
     kprint("  Use 'progs' to see available programs\n", 7);
     kprint("\n", 7);
@@ -155,6 +165,89 @@ static void cmd_progs(void) {
     kprint("\n", 7);
 }
 
+// Command: isols
+static void cmd_isols(const char* args) {
+    if (!iso9660_is_initialized()) {
+        kprint("\nISO9660 filesystem is not initialized\n\n", 14);
+        return;
+    }
+    
+    const char* path = args;
+    // Skip leading spaces
+    while (*path == ' ') path++;
+    
+    // Default to root if no path given
+    if (*path == '\0') {
+        path = "/";
+    }
+    
+    kprint("\n", 7);
+    iso9660_list_dir(path);
+    kprint("\n", 7);
+}
+
+// Command: isocat
+static void cmd_isocat(const char* args) {
+    if (!iso9660_is_initialized()) {
+        kprint("\nISO9660 filesystem is not initialized\n\n", 14);
+        return;
+    }
+    
+    const char* path = args;
+    // Skip leading spaces
+    while (*path == ' ') path++;
+    
+    if (*path == '\0') {
+        kprint("\nUsage: isocat <path>\n\n", 12);
+        return;
+    }
+    
+    size_t size;
+    const void* data = iso9660_find_file(path, &size);
+    
+    if (!data) {
+        kprint("\nFile not found: ", 14);
+        kprint(path, 14);
+        kprint("\n\n", 14);
+        return;
+    }
+    
+    kprint("\n", 7);
+    kprint("File: ", 7);
+    kprint(path, 11);
+    kprint(" (", 7);
+    char buf[32];
+    itoa(size, buf, 10);
+    kprint(buf, 7);
+    kprint(" bytes)\n", 7);
+    kprint("Content:\n", 7);
+    
+    // Print file content (limit to first 1024 bytes for safety)
+    size_t print_size = size > 1024 ? 1024 : size;
+    const char* text = (const char*)data;
+    for (size_t i = 0; i < print_size; i++) {
+        char c[2];
+        c[0] = text[i];
+        c[1] = '\0';
+        
+        if (text[i] >= 32 && text[i] < 127) {
+            kprint(c, 7);
+        } else if (text[i] == '\n') {
+            kprint("\n", 7);
+        } else if (text[i] == '\t') {
+            kprint("    ", 7);
+        } else {
+            kprint(".", 7);
+        }
+    }
+    
+    if (size > 1024) {
+        kprint("\n... (truncated, showing first 1024 bytes)\n", 7);
+    }
+    
+    kprint("\n\n", 7);
+}
+
 // Parse command line into argc/argv
 static int parse_command(const char* command, char* argv[], int max_args) {
     int argc = 0;
@@ -225,6 +318,21 @@ static void execute_command(const char* command) {
         }
     } else if (strcmp(argv[0], "progs") == 0) {
         cmd_progs();
+    } else if (strcmp(argv[0], "pwd") == 0) {
+        kprint(current_working_directory, 11);
+        kprint("\n", 7);
+    } else if (strcmp(argv[0], "isols") == 0) {
+        if (argc > 1) {
+            cmd_isols(argv[1]);
+        } else {
+            cmd_isols("/");
+        }
+    } else if (strcmp(argv[0], "isocat") == 0) {
+        if (argc > 1) {
+            cmd_isocat(argv[1]);
+        } else {
+            kprint("\nUsage: isocat <path>\n\n", 12);
+        }
     } else {
         // Try to execute as userspace program
         if (userspace_exists(argv[0])) {
@@ -243,8 +351,22 @@ static void execute_command(const char* command) {
     }
 }
 
-// Initialize the shell
+const char* shell_get_cwd(void) {
+    return current_working_directory;
+}
+
+void shell_set_cwd(const char* path) {
+    int i = 0;
+    while (path[i] != '\0' && i < MAX_PATH_LENGTH - 1) {
+        current_working_directory[i] = path[i];
+        i++;
+    }
+    current_working_directory[i] = '\0';
+}
+
 void shell_init(void) {
+    current_working_directory[0] = '/';
+    
     kprint("Type 'help' for available commands.\n\n", 7);
 }
 
@@ -258,7 +380,7 @@ void shell_run(void) {
         
         // Print prompt
         kprint("(host)-[", 7);
-        kprint("/", 2);
+        kprint(current_working_directory, 2);
         kprint("] ", 7);
         kprint("# ", 2);
         

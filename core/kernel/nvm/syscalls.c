@@ -7,7 +7,7 @@
 #include <core/drivers/serial.h>
 #include <core/kernel/log.h>
 #include <core/kernel/mem.h>
-#include <core/fs/vfs.h>
+// VFS is now in userspace - kernel syscalls don't need it directly
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
@@ -195,7 +195,9 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            result = vfs_create((const char*)filename_addr, (const char*)data_addr, file_size);
+            // VFS is now in userspace - syscalls should be handled there
+            LOG_WARN("Procces %d: SYS_CREATE not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
+            result = -1;
             
             proc->sp -= 3;
             if (proc->sp < STACK_SIZE) {
@@ -222,8 +224,9 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            // Write is same as create (overwrites)
-            result = vfs_create((const char*)filename_addr, (const char*)data_addr, file_size);
+            // VFS is now in userspace
+            LOG_WARN("Procces %d: SYS_WRITE not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
+            result = -1;
             
             proc->sp -= 3;
             if (proc->sp < STACK_SIZE) {
@@ -250,16 +253,9 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            size_t read_size = 0;
-            const char* file_data = vfs_read((const char*)filename_addr, &read_size);
-            
-            if (file_data) {
-                size_t copy_size = (read_size < max_size) ? read_size : max_size;
-                memcpy((void*)buffer_addr, file_data, copy_size);
-                result = copy_size;
-            } else {
-                result = -1;
-            }
+            // VFS is now in userspace
+            LOG_WARN("Procces %d: SYS_READ not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
+            result = -1;
             
             proc->sp -= 3;
             if (proc->sp < STACK_SIZE) {
@@ -284,7 +280,9 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 break;
             }
             
-            result = vfs_delete((const char*)filename_addr);
+            // VFS is now in userspace
+            LOG_WARN("Procces %d: SYS_DELETE not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
+            result = -1;
             
             proc->sp -= 1;
             if (proc->sp < STACK_SIZE) {

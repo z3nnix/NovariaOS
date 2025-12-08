@@ -10,5 +10,7 @@ extern void newline(void);
 extern void vgaprint(const char *str, int color);
 extern void terminal_set_cursor(int x, int y);
 extern void vga_backspace(void);
+extern void vga_scroll_up(void);
+extern void vga_scroll_down(void);
 
 #endif

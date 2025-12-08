@@ -3,8 +3,6 @@
 #include <core/kernel/kstd.h>
 
 int echo_main(int argc, char** argv) {
-    kprint("\n", 7);
-    
     for (int i = 1; i < argc; i++) {
         kprint(argv[i], 15);
         if (i < argc - 1) {

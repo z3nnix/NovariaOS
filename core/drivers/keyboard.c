@@ -37,6 +37,7 @@ static const char scancode_to_ascii_shifted[] = {
 static bool shift_pressed = false;
 static bool caps_lock = false;
 static bool ctrl_pressed = false;
+static bool extended_scancode = false;
 
 // Add a character to the buffer
 static void keyboard_buffer_push(char c) {
@@ -61,9 +62,13 @@ static char keyboard_buffer_pop(void) {
 void keyboard_handler(void) {
     uint8_t scancode = inb(KEYBOARD_DATA_PORT);
     
-    // Check for key release (bit 7 set)
+    if (scancode == 0xE0) {
+        extended_scancode = true;
+        return;
+    }
+    
     if (scancode & 0x80) {
-        scancode &= 0x7F; // Remove release bit
+        scancode &= 0x7F;
         
         // Check for shift release
         if (scancode == 0x2A || scancode == 0x36) {
@@ -74,10 +79,34 @@ void keyboard_handler(void) {
         if (scancode == 0x1D) {
             ctrl_pressed = false;
         }
+        
+        extended_scancode = false;
         return;
     }
     
-    // Check for shift press
+    if (extended_scancode) {
+        extended_scancode = false;
+        
+        if (scancode == 0x49) {
+            vga_scroll_up();
+            return;
+        } else if (scancode == 0x51) {
+            vga_scroll_down();
+            return;
+        } else if (scancode == 0x48) {
+            if (ctrl_pressed) {
+                vga_scroll_up();
+            }
+            return;
+        } else if (scancode == 0x50) {
+            if (ctrl_pressed) {
+                vga_scroll_down();
+            }
+            return;
+        }
+        return;
+    }
+    
     if (scancode == 0x2A || scancode == 0x36) {
         shift_pressed = true;
         return;
@@ -137,8 +166,7 @@ void keyboard_init(void) {
     shift_pressed = false;
     caps_lock = false;
     ctrl_pressed = false;
-    
-    kprint(":: Keyboard initialized\n", 7);
+    extended_scancode = false;
 }
 
 // Check if a character is available

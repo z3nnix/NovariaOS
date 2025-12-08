@@ -17,12 +17,13 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, syscalls.o, caps.o,  vga.o, timer.o, serial.o, keyboard.o, shell.o, ramfs.o, vfs.o, initramfs.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_ls.o, us_cat.o, us_rm.o, us_write.o, us_nova.o, us_uname.o]
+    deps: [kasm.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, syscalls.o, caps.o, vga.o, timer.o, serial.o, keyboard.o, cdrom.o, shell.o, syslog.o, ramfs.o, initramfs.o, iso9660.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_ls.o, us_cat.o, us_rm.o, us_write.o, us_nova.o, us_uname.o, us_vfs.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"
       - "mv ${@} ${BUILD_DIR}/"
       - "find . -name '*.o' -delete"
+      - "find . -name 'build_*' -delete"
 
   kasm.o:
     deps: []
@@ -84,25 +85,35 @@ targets:
     cmds:
       - "${CC} ${CFLAGS} core/drivers/keyboard.c -o ${@}"
 
+  cdrom.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} core/drivers/cdrom.c -o ${@}"
+
   shell.o:
     deps: []
     cmds:
       - "${CC} ${CFLAGS} core/kernel/shell.c -o ${@}"
+
+  syslog.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} core/kernel/syslog.c -o ${@}"
 
   ramfs.o:
     deps: []
     cmds:
       - "${CC} ${CFLAGS} core/fs/ramfs.c -o ${@}"
 
-  vfs.o:
-    deps: []
-    cmds:
-      - "${CC} ${CFLAGS} core/fs/vfs.c -o ${@}"
-
   initramfs.o:
     deps: []
     cmds:
       - "${CC} ${CFLAGS} core/fs/initramfs.c -o ${@}"
+
+  iso9660.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} core/fs/iso9660.c -o ${@}"
 
   userspace.o:
     deps: []
@@ -112,47 +123,52 @@ targets:
   userspace_init.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/userspace_init.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/userspace_init.c -o ${@}"
 
   us_echo.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/echo.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/echo.c -o ${@}"
 
   us_clear.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/clear.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/clear.c -o ${@}"
 
   us_ls.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/ls.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/ls.c -o ${@}"
 
   us_cat.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/cat.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/cat.c -o ${@}"
 
   us_rm.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/rm.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/rm.c -o ${@}"
 
   us_write.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/write.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/write.c -o ${@}"
 
   us_nova.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/nova.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/nova.c -o ${@}"
 
   us_uname.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/uname.c -o ${@}"
+      - "${CC} ${CFLAGS} usr/bin/uname.c -o ${@}"
+
+  us_vfs.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} usr/bin/vfs.c -o ${@}"
 
   rebuild-initramfs:
     phony: true
@@ -162,9 +178,10 @@ targets:
   iso:
     deps: [kernel.bin]
     cmds:
+      - "xorriso -as mkisofs -quiet -iso-level 3 -o ${BUILD_DIR}/data.iso usr/"
       - "${GRUB_MKRESCUE} -o build_${DATE}.iso ${ISO_DIR}"
 
   run:
     phony: true
     cmds:
-      - "${QEMU} -m 124M -serial file:qemu.log -cdrom build_${DATE}.iso"
+      - "${QEMU} -m 1024M -serial file:qemu.log -cdrom build_${DATE}.iso"

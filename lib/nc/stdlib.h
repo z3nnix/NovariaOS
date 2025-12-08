@@ -3,7 +3,7 @@
 unsigned int randSeed = 12345;  // Initializing the seed for the pseudo-random number generator
 
 // generate a pseudo-random number in the range [min, max]
-int rand(int min, int max) {
+static inline int rand(int min, int max) {
     randSeed = randSeed * 1103515245 + 12345;
     int randValue = (randSeed / 65536) % 32768;
     
@@ -11,7 +11,7 @@ int rand(int min, int max) {
 }
 
 // generate a pseudo-random number in the range [min, max] with given seed [seed].
-int srand(int min, int max, int seed) {
+static inline int srand(int min, int max, int seed) {
     unsigned int randSeed = seed;
     randSeed = randSeed * 1103515245 + 12345;
 
@@ -20,7 +20,7 @@ int srand(int min, int max, int seed) {
     return min + (randValue % (max - min + 1));
 }
 
-void reverse(char* str, int length) {
+static inline void reverse(char* str, int length) {
     int start = 0;
     int end = length - 1;
     while (start < end) {
@@ -32,7 +32,7 @@ void reverse(char* str, int length) {
     }
 }
 
-char* itoa(int num, char* str, int base) {
+static inline char* itoa(int num, char* str, int base) {
     int i = 0;
     bool isNegative = false;
 

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include <core/fs/vfs.h>
+#include "vfs.h"
 #include <core/kernel/kstd.h>
 
 // Helper function to get string length
-static int strlen(const char* str) {
+static int write_strlen(const char* str) {
     int len = 0;
     while (str[len] != '\0') {
         len++;
@@ -23,7 +23,7 @@ int write_main(int argc, char** argv) {
     int pos = 0;
     
     for (int i = 2; i < argc && pos < 4095; i++) {
-        int len = strlen(argv[i]);
+        int len = write_strlen(argv[i]);
         for (int j = 0; j < len && pos < 4095; j++) {
             content[pos++] = argv[i][j];
         }
