@@ -123,38 +123,42 @@ static void cmd_list(void) {
 
 // Command: run
 static void cmd_run(const char* args) {
-    // Parse the program index
-    int index = 0;
     const char* p = args;
-    
-    // Skip leading spaces
     while (*p == ' ') p++;
-    
-    // Parse number
-    while (*p >= '0' && *p <= '9') {
-        index = index * 10 + (*p - '0');
-        p++;
+
+    if (*p == '\0') {
+        kprint("\nError: Please specify program path\n", 12);
+        kprint("Usage: run <filepath>\n", 7);
+        kprint("\n", 7);
+        return;
     }
+
+    char filepath[256];
+    int i = 0;
+
+    while (*p != '\0' && *p != ' ' && i < 255) {
+        filepath[i++] = *p++;
+    }
+    filepath[i] = '\0';
+
+    if (!vfs_exists(filepath)) {
+        kprint("\nError: File '", 12);
+        kprint(filepath, 12);
+        kprint("' not found\n", 12);
+        kprint("\n", 7);
+        return;
+    }
+
+    size_t size;
+    const char* data = vfs_read(filepath, &size);
     
-    size_t count = initramfs_get_count();
-    if (index >= 0 && (size_t)index < count) {
-        struct program* prog = initramfs_get_program(index);
-        if (prog && prog->size > 0) {
-            kprint("\nRunning program ", 7);
-            char buf[32];
-            itoa(index, buf, 10);
-            kprint(buf, 7);
-            kprint("...\n", 7);
-            
-            nvm_execute(prog->data, prog->size, (uint16_t[]){CAP_ALL}, 1);
-            
-            kprint("Program finished.\n", 7);
-        } else {
-            kprint("\nError: Invalid program\n", 12);
-        }
+    if (data && size > 0) {
+        nvm_execute((uint8_t*)data, size, (uint16_t[]){CAP_ALL}, 1);
+        
     } else {
-        kprint("\nError: Invalid program index\n", 12);
+        kprint("Error: Failed to read program file or file is empty\n", 12);
     }
+    
     kprint("\n", 7);
 }
 
@@ -314,7 +318,7 @@ static void execute_command(const char* command) {
         if (argc > 1) {
             cmd_run(argv[1]);
         } else {
-            kprint("\nUsage: run <index>\n\n", 12);
+            kprint("\nUsage: run <path>\n\n", 12);
         }
     } else if (strcmp(argv[0], "progs") == 0) {
         cmd_progs();
