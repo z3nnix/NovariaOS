@@ -11,7 +11,7 @@
 #include <core/drivers/keyboard.h>
 #include <core/drivers/cdrom.h>
 #include <core/kernel/shell.h>
-#include <core/kernel/syslog.h>
+#include <core/kernel/log.h>
 #include <core/fs/ramfs.h>
 #include <core/fs/initramfs.h>
 #include <core/fs/iso9660.h>
@@ -49,26 +49,9 @@ void kmain(multiboot_info_t* mb_info) {
     ramfs_init();
     vfs_init();
     syslog_init();
-    
-    char buf[16];
-    char mem_msg[64];
-    mem_msg[0] = 'M'; mem_msg[1] = 'e'; mem_msg[2] = 'm'; mem_msg[3] = 'o';
-    mem_msg[4] = 'r'; mem_msg[5] = 'y'; mem_msg[6] = ':'; mem_msg[7] = ' ';
-    itoa(available_memory / 1024 / 1024, buf, 10);
-    int i = 0;
-    while (buf[i]) {
-        mem_msg[8 + i] = buf[i];
-        i++;
-    }
-    mem_msg[8 + i] = ' ';
-    mem_msg[9 + i] = 'M';
-    mem_msg[10 + i] = 'B';
-    mem_msg[11 + i] = '\n';
-    mem_msg[12 + i] = '\0';
-    syslog_write(mem_msg);
     keyboard_init();
     
-    syslog_write("System initialization started\n");
+    LOG_DEBUG("System initialization started\n");
     
     cdrom_init();
     
@@ -78,7 +61,7 @@ void kmain(multiboot_info_t* mb_info) {
     // Check multiboot modules for ISO9660
     if (mb_info->flags & MULTIBOOT_FLAG_MODS && mb_info->mods_count > 0) {
         module_t* modules = (module_t*)mb_info->mods_addr;
-        syslog_write("Checking multiboot modules for ISO9660...\n");
+        LOG_DEBUG("Checking multiboot modules for ISO9660...\n");
         
         for (uint32_t i = 0; i < mb_info->mods_count; i++) {
             uint32_t mod_start_addr = modules[i].mod_start;
@@ -97,11 +80,9 @@ void kmain(multiboot_info_t* mb_info) {
                     sig[3] == '0' && sig[4] == '1') {
                     iso_location = mod_start;
                     iso_size = mod_size;
-                    syslog_print(":: Found ISO9660 in module\n", 7);
                     char num[8];
                     itoa(i, num, 10);
-                    syslog_write(num);
-                    syslog_write("\n");
+                    LOG_DEBUG("Found ISO9660 in module: %d\n", num);
                     break;
                 }
             }
@@ -111,20 +92,20 @@ void kmain(multiboot_info_t* mb_info) {
     if (iso_location) {
         cdrom_set_iso_data(iso_location, iso_size);
         iso9660_init(iso_location, iso_size);
-        syslog_write("ISO9660 filesystem mounted\n");
+        LOG_DEBUG("ISO9660 filesystem mounted\n");
 
         iso9660_mount_to_vfs("/", "/");
-        syslog_write("ISO contents mounted to /\n");
+        LOG_DEBUG("ISO contents mounted to /\n");
     } else {
-        syslog_print(":: ISO9660 filesystem not found\n", 14);
+        LOG_DEBUG(":: ISO9660 filesystem not found\n");
     }
     
     initramfs_load(mb_info);
-    syslog_write("Initramfs loaded\n");
+    LOG_DEBUG("Initramfs loaded\n");
     nvm_init();
-    syslog_write("NVM initialized\n");
+    LOG_DEBUG("NVM initialized\n");
     userspace_init_programs();
-    syslog_write("Userspace programs registered\n");
+    LOG_DEBUG("Userspace programs registered\n");
     size_t program_count = initramfs_get_count();
     if (program_count > 0) {
         for (size_t i = 0; i < program_count; i++) {
@@ -156,10 +137,10 @@ void kmain(multiboot_info_t* mb_info) {
             }
         }
     } else {
-        syslog_print(":: No programs found in initramfs\n", 14);
+        LOG_DEBUG("No programs found in initramfs\n");
     }
     
-    syslog_write("System initialization complete\n");
+    LOG_DEBUG("System initialization complete\n");
     shell_init();
     shell_run();
     

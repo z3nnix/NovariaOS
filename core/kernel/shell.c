@@ -45,7 +45,6 @@ static int strlen(const char* str) {
 static void cmd_help(void) {
     kprint("\nBuilt-in commands:\n", 10);
     kprint("  help     - Show this help message\n", 7);
-    kprint("  info     - Show system information\n", 7);
     kprint("  memtest  - Test memory allocation\n", 7);
     kprint("  list     - List loaded NVM programs\n", 7);
     kprint("  progs    - List userspace programs\n", 7);
@@ -58,13 +57,6 @@ static void cmd_help(void) {
     kprint("  Ctrl+Down   - Scroll screen down\n", 7);
     kprint("\nUserspace programs:\n", 10);
     kprint("  Use 'progs' to see available programs\n", 7);
-    kprint("\n", 7);
-}
-
-static void cmd_info(void) {
-    kprint("\nNovariaOS v0.1\n", 10);
-    kprint("Kernel with NVM support\n", 7);
-    kprint("Architecture: x86\n", 7);
     kprint("\n", 7);
 }
 
@@ -237,8 +229,6 @@ static void execute_command(const char* command) {
     
     if (strcmp(argv[0], "help") == 0) {
         cmd_help();
-    } else if (strcmp(argv[0], "info") == 0) {
-        cmd_info();
     } else if (strcmp(argv[0], "memtest") == 0) {
         cmd_memtest();
     } else if (strcmp(argv[0], "list") == 0) {

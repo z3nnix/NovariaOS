@@ -5,6 +5,7 @@
 #include <core/kernel/kstd.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <usr/bin/vfs.h>
 
 #define LOG_LEVEL_FATAL   0
 #define LOG_LEVEL_ERROR   1
@@ -17,18 +18,32 @@
 #define CURRENT_LOG_LEVEL LOG_LEVEL_TRACE
 #endif
 
+#define MAX_LOG_SIZE 4000
+
+static char log_buffer[MAX_LOG_SIZE];
+static size_t log_size = 0;
+
+static inline void syslog_write_to_buffer(const char* message) {
+    if (!message) return;
+    
+    int i = 0;
+    while (message[i] != '\0' && log_size < MAX_LOG_SIZE - 1) {
+        log_buffer[log_size++] = message[i++];
+    }
+    log_buffer[log_size] = '\0';
+    
+    vfs_create("/var/log/system.log", log_buffer, log_size);
+}
 
 static inline char* utoa_hex(unsigned int num, char* str) {
     int i = 0;
     
-    // Handle 0 explicitly
     if (num == 0) {
         str[i++] = '0';
         str[i] = '\0';
         return str;
     }
     
-    // Process individual digits
     while (num != 0) {
         int rem = num % 16;
         str[i++] = (rem > 9) ? (rem - 10) + 'A' : rem + '0';
@@ -143,6 +158,20 @@ static inline void log_format_basic(const char* level, const char* format, ...) 
     
     buffer[buf_pos] = '\0';
     serial_print(buffer);
+    syslog_write_to_buffer(buffer);
+}
+
+static inline void syslog_init(void) {
+    log_buffer[0] = '\0';
+    log_size = 0;
+    
+    const char* init_msg = "=== NovariaOS System Log ===\n";
+    int i = 0;
+    while (init_msg[i] != '\0' && log_size < MAX_LOG_SIZE - 1) {
+        log_buffer[log_size++] = init_msg[i++];
+    }
+    log_buffer[log_size] = '\0';
+    vfs_create("/var/log/system.log", log_buffer, log_size);
 }
 
 #define LOG_FATAL(...) do { if (LOG_LEVEL_FATAL <= CURRENT_LOG_LEVEL) log_format_basic("FATAL", __VA_ARGS__); } while(0)
