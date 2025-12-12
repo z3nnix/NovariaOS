@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "vfs.h"
+#include <core/fs/vfs.h>
 #include <core/kernel/kstd.h>
 
 // Helper function to get string length

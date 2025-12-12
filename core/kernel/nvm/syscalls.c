@@ -7,6 +7,7 @@
 #include <core/drivers/serial.h>
 #include <core/kernel/log.h>
 #include <core/kernel/mem.h>
+#include <core/fs/vfs.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
@@ -48,6 +49,82 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
         
         case SYS_EXEC:
             LOG_WARN("Procces %d: Exec syscall was called. Ignore\n");
+            break;
+
+        case SYS_OPEN:
+            if (!caps_has_capability(proc, CAP_FS_READ)) {
+                LOG_WARN("Process %d: Terminate process - required caps not received.\n", proc->pid);
+                result = -1;
+                break;
+            }
+
+            if (proc->sp < 1) {
+                LOG_WARN("Process %d: Stack underflow for open\n", proc->pid);
+                result = -1;
+                break;
+            }
+
+            char filename[MAX_FILENAME];
+            int str_pos = 0;
+            
+            LOG_TRACE("Process %d: Open called, sp=%d\n", proc->pid, proc->sp);
+
+            int original_sp = proc->sp;
+
+            while (proc->sp > 0 && str_pos < MAX_FILENAME - 1) {
+                int32_t value = proc->stack[proc->sp - 1];
+                char ch = value & 0xFF;
+                
+                LOG_TRACE("  Reading char: %c (%d) from stack[%d]\n", 
+                        (ch >= 32 && ch < 127) ? ch : '.', ch, proc->sp - 1);
+                
+                if (ch == '\0') {
+                    proc->sp--;
+                    break;
+                }
+                
+                filename[str_pos++] = ch;
+                proc->sp--;
+            }
+            
+            filename[str_pos] = '\0';
+
+            for (int i = 0; i < str_pos / 2; i++) {
+                char temp = filename[i];
+                filename[i] = filename[str_pos - 1 - i];
+                filename[str_pos - 1 - i] = temp;
+            }
+            
+            LOG_TRACE("Process %d: Opening file '%s' (read %d chars, sp was %d, now %d)\n", 
+                    proc->pid, filename, str_pos, original_sp, proc->sp);
+
+            int fd = vfs_open(filename, VFS_READ | VFS_WRITE);
+
+            proc->stack[proc->sp] = fd; 
+            proc->sp++;
+            
+            LOG_TRACE("  FD=%d placed at stack[%d], new sp=%d, stack[0]=%d\n", 
+                    fd, proc->sp - 1, proc->sp, proc->stack[0]);
+            
+            result = 0;
+            break;
+
+        case SYS_READ:
+            if (!caps_has_capability(proc, CAP_FS_READ)) {
+                LOG_WARN("Procces %d: Terminate procces - required caps not received.\n", proc->pid);
+                result = -1;
+                break;
+            }
+
+            if (proc->sp < 1) {
+                LOG_WARN("Procces %d: Stack underflow for read\n", proc->pid);
+                result = -1;
+                break;
+            }
+
+            value = proc->stack[proc->sp - 1];
+            
+            LOG_DEBUG("%d\n", value); 
             break;
 
         case SYS_MSG_SEND:
@@ -160,6 +237,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             proc->sp -= 2;
             break;
 
+        // TODO: replace via /dev/vb0
         case SYS_PRINT:
             // Print a single character using kprint
             if (proc->sp < 1) {
@@ -172,112 +250,6 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             char print_char[2] = {(char)value, 0};
             kprint(print_char, 15);
             proc->sp -= 1;
-            break;
-
-        case SYS_CREATE:
-            if (proc->sp < 3) {
-                LOG_WARN("Procces %d: Stack underflow for create\\n", proc->pid);
-                result = -1;
-                break;
-            }
-            
-            uint32_t filename_addr = (uint32_t)proc->stack[proc->sp - 3];
-            uint32_t data_addr = (uint32_t)proc->stack[proc->sp - 2];
-            uint32_t file_size = (uint32_t)proc->stack[proc->sp - 1];
-            
-            if (filename_addr < 0x100000 || data_addr < 0x100000) {
-                LOG_WARN("Procces %d: Invalid address for create\\n", proc->pid);
-                result = -1;
-                proc->sp -= 3;
-                break;
-            }
-
-            // LOG_WARN("Procces %d: SYS_CREATE not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
-            result = -1;
-            
-            proc->sp -= 3;
-            if (proc->sp < STACK_SIZE) {
-                proc->stack[proc->sp++] = result;
-            }
-            break;
-
-        case SYS_WRITE:
-            if (proc->sp < 3) {
-                LOG_WARN("Procces %d: Stack underflow for write\\n", proc->pid);
-                result = -1;
-                break;
-            }
-            
-            filename_addr = (uint32_t)proc->stack[proc->sp - 3];
-            data_addr = (uint32_t)proc->stack[proc->sp - 2];
-            file_size = (uint32_t)proc->stack[proc->sp - 1];
-            
-            if (filename_addr < 0x100000 || data_addr < 0x100000) {
-                LOG_WARN("Procces %d: Invalid address for write\\n", proc->pid);
-                result = -1;
-                proc->sp -= 3;
-                break;
-            }
-            
-            // LOG_WARN("Procces %d: SYS_WRITE not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
-            result = -1;
-            
-            proc->sp -= 3;
-            if (proc->sp < STACK_SIZE) {
-                proc->stack[proc->sp++] = result;
-            }
-            break;
-
-        case SYS_READ:
-            if (proc->sp < 3) {
-                LOG_WARN("Procces %d: Stack underflow for read\n", proc->pid);
-                result = -1;
-                break;
-            }
-            
-            filename_addr = (uint32_t)proc->stack[proc->sp - 3];
-            uint32_t buffer_addr = (uint32_t)proc->stack[proc->sp - 2];
-            uint32_t max_size = (uint32_t)proc->stack[proc->sp - 1];
-            
-            if (filename_addr < 0x100000 || buffer_addr < 0x100000) {
-                LOG_WARN("Procces %d: Invalid address for read\\n", proc->pid);
-                result = -1;
-                proc->sp -= 3;
-                break;
-            }
-            
-            // LOG_WARN("Procces %d: SYS_READ not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
-            result = -1;
-            
-            proc->sp -= 3;
-            if (proc->sp < STACK_SIZE) {
-                proc->stack[proc->sp++] = result;
-            }
-            break;
-
-        case SYS_DELETE:
-            if (proc->sp < 1) {
-                LOG_WARN("Procces %d: Stack underflow for delete\\n", proc->pid);
-                result = -1;
-                break;
-            }
-            
-            filename_addr = (uint32_t)proc->stack[proc->sp - 1];
-            
-            if (filename_addr < 0x100000) {
-                LOG_WARN("Procces %d: Invalid address for delete\\n", proc->pid);
-                result = -1;
-                proc->sp -= 1;
-                break;
-            }
-            
-            // LOG_WARN("Procces %d: SYS_DELETE not implemented in kernel (VFS moved to userspace)\\n", proc->pid);
-            result = -1;
-            
-            proc->sp -= 1;
-            if (proc->sp < STACK_SIZE) {
-                proc->stack[proc->sp++] = result;
-            }
             break;
 
         default:

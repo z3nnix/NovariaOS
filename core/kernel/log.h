@@ -5,7 +5,7 @@
 #include <core/kernel/kstd.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <usr/bin/vfs.h>
+#include <core/fs/vfs.h>
 
 #define LOG_LEVEL_FATAL   0
 #define LOG_LEVEL_ERROR   1
@@ -15,7 +15,7 @@
 #define LOG_LEVEL_TRACE   5
 
 #ifndef CURRENT_LOG_LEVEL
-#define CURRENT_LOG_LEVEL LOG_LEVEL_TRACE
+#define CURRENT_LOG_LEVEL LOG_LEVEL_DEBUG
 #endif
 
 #define MAX_LOG_SIZE 4000

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "vfs.h"
+#include <core/fs/vfs.h>
 #include <core/kernel/kstd.h>
 
 int cat_main(int argc, char** argv) {

@@ -17,7 +17,7 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, syscalls.o, caps.o, vga.o, timer.o, serial.o, keyboard.o, cdrom.o, shell.o, ramfs.o, initramfs.o, iso9660.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_ls.o, us_cat.o, us_rm.o, us_write.o, us_nova.o, us_uname.o, us_vfs.o]
+    deps: [kasm.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, syscalls.o, caps.o, vga.o, timer.o, serial.o, keyboard.o, cdrom.o, shell.o, ramfs.o, initramfs.o, iso9660.o, vfs.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_ls.o, us_cat.o, us_rm.o, us_write.o, us_nova.o, us_uname.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"
@@ -108,6 +108,11 @@ targets:
     deps: []
     cmds:
       - "${CC} ${CFLAGS} core/fs/iso9660.c -o ${@}"
+      
+  vfs.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} core/fs/vfs.c -o ${@}"
 
   userspace.o:
     deps: []
@@ -158,11 +163,6 @@ targets:
     deps: []
     cmds:
       - "${CC} ${CFLAGS} usr/bin/uname.c -o ${@}"
-
-  us_vfs.o:
-    deps: []
-    cmds:
-      - "${CC} ${CFLAGS} usr/bin/vfs.c -o ${@}"
 
   rebuild-initramfs:
     phony: true

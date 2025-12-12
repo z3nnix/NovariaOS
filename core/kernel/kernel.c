@@ -15,7 +15,7 @@
 #include <core/fs/ramfs.h>
 #include <core/fs/initramfs.h>
 #include <core/fs/iso9660.h>
-#include <usr/bin/vfs.h>
+#include <core/fs/vfs.h>
 #include <usr/bin/userspace_init.h>
 #include <stddef.h>
 #include <stdbool.h>
