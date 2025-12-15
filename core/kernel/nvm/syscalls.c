@@ -22,15 +22,12 @@ typedef struct {
     uint8_t content;
 } message_t;
 
-
 #define MAX_MESSAGES 32
 static message_t message_queue[MAX_MESSAGES];
 static int message_count = 0;
 
-// Syscalls
 int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
     int32_t result = 0;
-    int32_t arg1;
     char buffer[32];
     
     switch(syscall_id) {
@@ -38,7 +35,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             if(proc->sp >= 1) {
                 proc->exit_code = proc->stack[proc->sp - 1];
                 itoa(proc->exit_code, buffer, 10);
-                LOG_DEBUG("Procces %d: exited with code: %s\n", proc->pid, buffer);
+                LOG_DEBUG("Process %d: exited with code: %s\n", proc->pid, buffer);
             } else {
                 proc->exit_code = 0;
             }
@@ -48,121 +45,161 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             break;
         
         case SYS_EXEC:
-            LOG_WARN("Procces %d: Exec syscall was called. Ignore\n");
+            LOG_WARN("Process %d: Exec syscall was called. Ignore\n", proc->pid);
             break;
 
-        case SYS_OPEN:
+        case SYS_OPEN: {
             if (!caps_has_capability(proc, CAP_FS_READ)) {
-                LOG_WARN("Process %d: Terminate process - required caps not received.\n", proc->pid);
                 result = -1;
                 break;
             }
 
             if (proc->sp < 1) {
-                LOG_WARN("Process %d: Stack underflow for open\n", proc->pid);
                 result = -1;
                 break;
             }
 
-            char filename[MAX_FILENAME];
-            int str_pos = 0;
+            int start_pos = proc->sp;
+            int null_pos = -1;
             
-            LOG_TRACE("Process %d: Open called, sp=%d\n", proc->pid, proc->sp);
-
-            int original_sp = proc->sp;
-
-            while (proc->sp > 0 && str_pos < MAX_FILENAME - 1) {
-                int32_t value = proc->stack[proc->sp - 1];
-                char ch = value & 0xFF;
-                
-                LOG_TRACE("  Reading char: %c (%d) from stack[%d]\n", 
-                        (ch >= 32 && ch < 127) ? ch : '.', ch, proc->sp - 1);
-                
-                if (ch == '\0') {
-                    proc->sp--;
+            for (int i = proc->sp - 1; i >= 0; i--) {
+                if ((proc->stack[i] & 0xFF) == 0) {
+                    null_pos = i;
                     break;
                 }
-                
-                filename[str_pos++] = ch;
-                proc->sp--;
             }
             
-            filename[str_pos] = '\0';
-
-            for (int i = 0; i < str_pos / 2; i++) {
-                char temp = filename[i];
-                filename[i] = filename[str_pos - 1 - i];
-                filename[str_pos - 1 - i] = temp;
+            if (null_pos == -1) {
+                result = -1;
+                break;
             }
             
-            LOG_TRACE("Process %d: Opening file '%s' (read %d chars, sp was %d, now %d)\n", 
-                    proc->pid, filename, str_pos, original_sp, proc->sp);
+            char filename[MAX_FILENAME];
+            int pos = 0;
+       
+            for (int i = null_pos + 1; i < start_pos && pos < MAX_FILENAME - 1; i++) {
+                char ch = proc->stack[i] & 0xFF;
+                filename[pos++] = ch;
+            }
+            
+            filename[pos] = '\0';
 
+            proc->sp = null_pos;
+            
+            LOG_TRACE("Process %d: Opening file '%s'\n", proc->pid, filename);
+            
             int fd = vfs_open(filename, VFS_READ | VFS_WRITE);
-
-            proc->stack[proc->sp] = fd; 
-            proc->sp++;
             
-            LOG_TRACE("  FD=%d placed at stack[%d], new sp=%d, stack[0]=%d\n", 
-                    fd, proc->sp - 1, proc->sp, proc->stack[0]);
+            LOG_TRACE("     vfs_open returned: %d\n", fd);
+            
+            proc->stack[proc->sp] = fd;
+            proc->sp++;
             
             result = 0;
             break;
+        }
 
-        case SYS_READ:
+        case SYS_READ: {
             if (!caps_has_capability(proc, CAP_FS_READ)) {
-                LOG_WARN("Procces %d: Terminate procces - required caps not received.\n", proc->pid);
                 result = -1;
                 break;
             }
 
             if (proc->sp < 1) {
-                LOG_WARN("Procces %d: Stack underflow for read\n", proc->pid);
                 result = -1;
                 break;
             }
-
-            value = proc->stack[proc->sp - 1];
             
-            LOG_DEBUG("%d\n", value); 
-            break;
-
-        case SYS_MSG_SEND:
-            if (proc->sp < 2) {
-                LOG_WARN("Procces %d: Stack underflow for msg_send\n", proc->pid);
-                result = -1;
-                break;
-            }
-
-            recipient = proc->stack[proc->sp - 2] & 0xFFFF;
-            value = proc->stack[proc->sp - 1] & 0xFF;
-
-            if (message_count >= MAX_MESSAGES) {
-                LOG_WARN("Procces %d: Message queue full\n", proc->pid);
-                result = -1;
-                break;
-            }
-
-            message_t msg;
-            msg.recipient = recipient;
-            msg.sender = proc->pid;
-            msg.content = value;
+            int32_t fd = proc->stack[proc->sp - 1];
+            proc->sp--;
             
-            message_queue[message_count] = msg;
-            message_count++;
-
-            for (int i = 0; i < MAX_PROCESSES; i++) {
-                if (processes[i].active && processes[i].pid == recipient && processes[i].blocked) {
-                    processes[i].blocked = false; 
-                    processes[i].wakeup_reason = 1;
-
-                    LOG_DEBUG("Unblocked procces %d due to incoming message", buffer);
-                    break;
+            if (fd < 0) {
+                result = -1;
+            } else {
+                char buffer;
+                ssize_t bytes = vfs_readfd(fd, &buffer, 1);
+                
+                if (bytes == 1) {
+                    result = (unsigned char)buffer;
+                } else if (bytes == 0) {
+                    result = 0;  // EOF
+                } else {
+                    result = -1;
                 }
             }
 
-            proc->sp -= 2;
+            proc->stack[proc->sp] = result;
+            proc->sp++;
             break;
+        }
+
+        case SYS_WRITE: {
+            if (!caps_has_capability(proc, CAP_FS_WRITE)) {
+                result = -1;
+                break;
+            }
+
+            if (proc->sp < 2) {
+                result = -1;
+                break;
+            }
+            
+            int32_t fd = proc->stack[proc->sp - 2];
+            int32_t byte_val = proc->stack[proc->sp - 1];
+            proc->sp -= 2;
+            
+            if (fd < 0) {
+                result = -1;
+            } else if (fd == 1 || fd == 2) {
+                char ch = (char)(byte_val & 0xFF);
+                char str[2] = {ch, '\0'};
+                kprint(str, 15);
+                result = 1;
+            } else {
+                char ch = (char)(byte_val & 0xFF);
+                result = vfs_writefd(fd, &ch, 1);
+            }
+            
+            proc->stack[proc->sp] = result;
+            proc->sp++;
+            break;
+        }
+
+        case SYS_MSG_SEND:
+                if (proc->sp < 2) {
+                    LOG_WARN("Process %d: Stack underflow for msg_send\n", proc->pid);
+                    result = -1;
+                    break;
+                }
+
+                recipient = proc->stack[proc->sp - 2] & 0xFFFF;
+                value = proc->stack[proc->sp - 1] & 0xFF;
+
+                if (message_count >= MAX_MESSAGES) {
+                    LOG_WARN("Process %d: Message queue full\n", proc->pid);
+                    result = -1;
+                    break;
+                }
+
+                message_t msg;
+                msg.recipient = recipient;
+                msg.sender = proc->pid;
+                msg.content = value;
+                
+                message_queue[message_count] = msg;
+                message_count++;
+
+                for (int i = 0; i < MAX_PROCESSES; i++) {
+                    if (processes[i].active && processes[i].pid == recipient && processes[i].blocked) {
+                        processes[i].blocked = false; 
+                        processes[i].wakeup_reason = 1;
+                        LOG_DEBUG("Unblocked process %d due to incoming message\n", recipient);
+                        break;
+                    }
+                }
+
+                proc->sp -= 2;
+                break;
             
         case SYS_MSG_RECEIVE:
             int found_index = -1;
@@ -178,7 +215,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 itoa(proc->pid, buffer, 10);
                 serial_print(buffer);
                 serial_print(" - blocking process\n");
-                LOG_DEBUG("Procces %d: No messages for process - blocking process\n", proc->pid);
+                LOG_DEBUG("Process %d: No messages - blocking\n", proc->pid);
                 proc->blocked = true;
                 result = -1;
                 break;
@@ -196,24 +233,24 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 proc->stack[proc->sp + 1] = received_msg.content;
                 proc->sp += 2;
             } else {
-                LOG_DEBUG("Procces %d: Stack overflow in msg_receive\n", proc->pid);
+                LOG_DEBUG("Process %d: Stack overflow in msg_receive\n", proc->pid);
                 result = -1;
                 break;
             }
 
             itoa(proc->pid, buffer, 10);
-            LOG_DEBUG("Procces %d: Message received. sender=%s. Unblock procces\n", proc->pid, buffer);
+            LOG_DEBUG("Process %d: Message received\n", proc->pid);
             break;
 
         case SYS_PORT_IN_BYTE:
             if (!caps_has_capability(proc, CAP_DRV_ACCESS)) {
-                LOG_WARN("Procces %d: Terminate procces - required caps not received.\n", proc->pid);
+                LOG_WARN("Process %d: Terminate process - required caps not received\n", proc->pid);
                 result = -1;
                 break;
             }
             
             if (proc->sp == 0) {
-                LOG_WARN("Procces %d: Stack empty for inb\n", proc->pid);
+                LOG_WARN("Process %d: Stack empty for inb\n", proc->pid);
                 result = -1;
                 break;
             }
@@ -225,7 +262,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
 
         case SYS_PORT_OUT_BYTE:
             if (proc->sp < 2) {
-                LOG_WARN("Procces %d: Stack underflow for outb\\n", proc->pid);
+                LOG_WARN("Process %d: Stack underflow for outb\n", proc->pid);
                 result = -1;
                 break;
             }
@@ -237,11 +274,9 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             proc->sp -= 2;
             break;
 
-        // TODO: replace via /dev/vb0
         case SYS_PRINT:
-            // Print a single character using kprint
             if (proc->sp < 1) {
-                LOG_WARN("Procces %d: Stack underflow for print\\n", proc->pid);
+                LOG_WARN("Process %d: Stack underflow for print\n", proc->pid);
                 result = -1;
                 break;
             }
@@ -253,8 +288,8 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
             break;
 
         default:
-            itoa(syscall_id, buffer, 10);
-            LOG_WARN("Procces %d: unknown syscall", proc->pid);
+            itoa(syscall_id, buffer, 16);
+            LOG_WARN("Process %d: unknown syscall: 0x%s\n", proc->pid, buffer);
             proc->exit_code = -1;
             proc->active = false;
     }
