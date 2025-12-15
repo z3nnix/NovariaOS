@@ -215,6 +215,9 @@ static int parse_command(const char* command, char* argv[], int max_args) {
     return argc;
 }
 
+static int should_delay_prompt = 0;
+static int delay_ticks = 0;
+
 static void execute_command(const char* command) {
     while (*command == ' ') command++;
     
@@ -275,7 +278,10 @@ static void execute_command(const char* command) {
             const char* data = vfs_read(bin_path, &size);
             
             if (data && size > 0) {
+                should_delay_prompt = 1;
+                delay_ticks = 20;
                 nvm_execute((uint8_t*)data, size, (uint16_t[]){CAP_ALL}, 1);
+                return;
             } else {
                 kprint("Error: Failed to read program file\n", 12);
             }
@@ -310,6 +316,8 @@ void shell_set_cwd(const char* path) {
 
 void shell_init(void) {
     current_working_directory[0] = '/';
+    should_delay_prompt = 0;
+    delay_ticks = 0;
     
     kprint("Type 'help' for available commands.\n\n", 7);
 }
@@ -319,6 +327,15 @@ void shell_run(void) {
     
     while (1) {
         nvm_scheduler_tick();
+        
+        if (should_delay_prompt) {
+            if (delay_ticks > 0) {
+                delay_ticks--;
+                continue;
+            } else {
+                should_delay_prompt = 0;
+            }
+        }
         
         kprint("(host)-[", 7);
         kprint(current_working_directory, 2);
