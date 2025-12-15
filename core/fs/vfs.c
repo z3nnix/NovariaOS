@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include <core/crypto/chacha20_rng.h>
+#include <core/arch/entropy.h>
 #include <core/fs/vfs.h>
 #include <string.h>
 #include <stdlib.h>
@@ -224,9 +226,18 @@ static vfs_ssize_t dev_full_write(vfs_file_t* file, const void* buf, size_t coun
 
 static vfs_ssize_t dev_random_read(vfs_file_t* file, void* buf, size_t count, vfs_off_t* pos) {
     (void)file; (void)pos;
-    for (size_t i = 0; i < count; i++) {
-        ((unsigned char*)buf)[i] = 0xEF;
+    
+    static struct chacha20_rng rng;
+    static int initialized = 0;
+    
+    if (!initialized) {
+        uint64_t seed = get_hw_entropy();
+        chacha20_rng_init(&rng, seed);
+        initialized = 1;
     }
+    
+    chacha20_rng_bytes(&rng, buf, count);
+    
     return count;
 }
 
