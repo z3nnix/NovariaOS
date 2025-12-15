@@ -117,7 +117,7 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
                 result = -1;
             } else {
                 char buffer;
-                ssize_t bytes = vfs_readfd(fd, &buffer, 1);
+                size_t bytes = vfs_readfd(fd, &buffer, 1);
                 
                 if (bytes == 1) {
                     result = (unsigned char)buffer;
