@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include <core/drivers/keyboard.h>
-#include <core/drivers/vga.h>
+#include <core/drivers/fb.h>
 #include <core/kernel/kstd.h>
 
 extern uint8_t inb(uint16_t port);

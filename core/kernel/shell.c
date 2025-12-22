@@ -3,7 +3,7 @@
 #include <core/kernel/shell.h>
 #include <core/kernel/kstd.h>
 #include <core/drivers/keyboard.h>
-#include <core/drivers/vga.h>
+#include <core/drivers/fb.h>
 #include <core/kernel/mem.h>
 #include <core/fs/initramfs.h>
 #include <core/fs/iso9660.h>

@@ -6,7 +6,7 @@
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
-#include <core/drivers/vga.h>
+#include <core/drivers/fb.h>
 #include <core/drivers/timer.h>
 #include <core/drivers/keyboard.h>
 #include <core/drivers/cdrom.h>

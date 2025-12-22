@@ -3,6 +3,10 @@ ENTRY(start)
 SECTIONS {
     . = 1M;
 
+    .multiboot_header : {
+        *(.multiboot_header)
+    }
+
     .text BLOCK(4K) : ALIGN(4K) {
         *(.multiboot)
         *(.text)

@@ -2,7 +2,7 @@
 
 #include <core/kernel/kstd.h>
 #include <core/drivers/keyboard.h>
-#include <core/drivers/vga.h>
+#include <core/drivers/fb.h>
 #include <core/fs/vfs.h>
 
 #define MAX_LINES 20

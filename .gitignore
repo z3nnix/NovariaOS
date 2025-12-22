@@ -3,4 +3,5 @@ build/boot/initramfs
 build/boot/data.iso
 build*.iso
 *.log
+!build/limine-bios-cd.bin
 *.bin
