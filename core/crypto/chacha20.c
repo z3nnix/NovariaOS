@@ -1,45 +1,45 @@
 #include "chacha20.h"
 
-static uint32_t rotl32(uint32_t x, int n)
+static int32_t rotl32(int32_t x, int n)
 {
     return (x << n) | (x >> (32 - n));
 }
 
-static uint32_t pack4(const uint8_t *a)
+static int32_t pack4(const int8_t *a)
 {
-    uint32_t res = 0;
-    res |= (uint32_t)a[0] << 0;
-    res |= (uint32_t)a[1] << 8;
-    res |= (uint32_t)a[2] << 16;
-    res |= (uint32_t)a[3] << 24;
+    int32_t res = 0;
+    res |= (int32_t)a[0] << 0;
+    res |= (int32_t)a[1] << 8;
+    res |= (int32_t)a[2] << 16;
+    res |= (int32_t)a[3] << 24;
     return res;
 }
 
-static void unpack4(uint32_t src, uint8_t *dst)
+static void unpack4(int32_t src, int8_t *dst)
 {
-    dst[0] = (uint8_t)(src >> 0);
-    dst[1] = (uint8_t)(src >> 8);
-    dst[2] = (uint8_t)(src >> 16);
-    dst[3] = (uint8_t)(src >> 24);
+    dst[0] = (int8_t)(src >> 0);
+    dst[1] = (int8_t)(src >> 8);
+    dst[2] = (int8_t)(src >> 16);
+    dst[3] = (int8_t)(src >> 24);
 }
 
-static void memory_copy(uint8_t *dst, const uint8_t *src, uint32_t n)
+static void memory_copy(int8_t *dst, const int8_t *src, int32_t n)
 {
-    for(uint32_t i = 0; i < n; i++) {
+    for(int32_t i = 0; i < n; i++) {
         dst[i] = src[i];
     }
 }
 
-static void memory_set(uint8_t *dst, uint8_t val, uint32_t n)
+static void memory_set(int8_t *dst, int8_t val, int32_t n)
 {
-    for(uint32_t i = 0; i < n; i++) {
+    for(int32_t i = 0; i < n; i++) {
         dst[i] = val;
     }
 }
 
-static void chacha20_init_block(struct chacha20_context *ctx, uint8_t key[], uint8_t nonce[])
+static void chacha20_init_block(struct chacha20_context *ctx, int8_t key[], int8_t nonce[])
 {
-    const uint8_t magic_constant[16] = {
+    const int8_t magic_constant[16] = {
         'e', 'x', 'p', 'a', 'n', 'd', ' ', '3',
         '2', '-', 'b', 'y', 't', 'e', ' ', 'k'
     };
@@ -67,10 +67,10 @@ static void chacha20_init_block(struct chacha20_context *ctx, uint8_t key[], uin
     ctx->state[15] = pack4(nonce + 8);
 }
 
-static void chacha20_block_set_counter(struct chacha20_context *ctx, uint64_t counter)
+static void chacha20_block_set_counter(struct chacha20_context *ctx, int counter)
 {
-    uint32_t counter_low = (uint32_t)counter;
-    uint32_t counter_high = (uint32_t)(counter >> 32);
+    int32_t counter_low = (int32_t)counter;
+    int32_t counter_high = (int32_t)(counter >> 32);
     
     ctx->state[12] = counter_low;
     ctx->state[13] = pack4(ctx->nonce + 0) + counter_high;
@@ -78,7 +78,7 @@ static void chacha20_block_set_counter(struct chacha20_context *ctx, uint64_t co
 
 static void chacha20_block_next(struct chacha20_context *ctx)
 {
-    uint32_t x[16];
+    int32_t x[16];
     
     for(int i = 0; i < 16; i++) {
         x[i] = ctx->state[i];
@@ -133,27 +133,27 @@ static void chacha20_block_next(struct chacha20_context *ctx)
         ctx->keystream32[i] = x[i] + ctx->state[i];
     }
     
-    uint32_t *counter = &ctx->state[12];
+    int32_t *counter = &ctx->state[12];
     counter[0]++;
     if(counter[0] == 0) {
         counter[1]++;
     }
 }
 
-void chacha20_init_context(struct chacha20_context *ctx, uint8_t key[], uint8_t nonce[], uint64_t counter)
+void chacha20_init_context(struct chacha20_context *ctx, int8_t key[], int8_t nonce[], int counter)
 {
-    memory_set((uint8_t*)ctx, 0, sizeof(struct chacha20_context));
+    memory_set((int8_t*)ctx, 0, sizeof(struct chacha20_context));
     chacha20_init_block(ctx, key, nonce);
     chacha20_block_set_counter(ctx, counter);
     ctx->counter = counter;
     ctx->position = 64;
 }
 
-void chacha20_xor(struct chacha20_context *ctx, uint8_t *bytes, uint32_t n_bytes)
+void chacha20_xor(struct chacha20_context *ctx, int8_t *bytes, int32_t n_bytes)
 {
-    uint8_t *keystream8 = (uint8_t*)ctx->keystream32;
+    int8_t *keystream8 = (int8_t*)ctx->keystream32;
     
-    for(uint32_t i = 0; i < n_bytes; i++)
+    for(int32_t i = 0; i < n_bytes; i++)
     {
         if(ctx->position >= 64)
         {

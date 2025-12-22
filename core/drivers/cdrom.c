@@ -15,17 +15,17 @@ void cdrom_set_iso_data(void* data, size_t size) {
     iso_size = size;
 }
 
-void* cdrom_read_sectors(uint32_t lba, uint32_t count) {
+void* cdrom_read_sectors(int32_t lba, int32_t count) {
     if (!iso_memory) {
         return NULL;
     }
     
-    uint32_t offset = lba * 2048;
+    int32_t offset = lba * 2048;
     if (offset >= iso_size) {
         return NULL;
     }
     
-    return (void*)((uint8_t*)iso_memory + offset);
+    return (void*)((int8_t*)iso_memory + offset);
 }
 
 size_t cdrom_get_iso_size(void) {

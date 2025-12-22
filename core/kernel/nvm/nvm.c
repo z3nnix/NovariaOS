@@ -8,10 +8,10 @@
 #include <core/kernel/nvm/caps.h>
 
 nvm_process_t processes[MAX_PROCESSES];
-uint8_t current_process = 0;
-uint32_t timer_ticks = 0;
+int8_t current_process = 0;
+int32_t timer_ticks = 0;
 
-int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc);
+int32_t syscall_handler(int8_t syscall_id, nvm_process_t* proc);
 
 void nvm_init() {
     for(int i = 0; i < MAX_PROCESSES; i++) {
@@ -26,7 +26,7 @@ void nvm_init() {
 }
 
 // Signature checking and process creation
-int nvm_create_process(uint8_t* bytecode, uint32_t size, uint16_t initial_caps[], uint8_t caps_count) {
+int nvm_create_process(int8_t* bytecode, int32_t size, int16_t initial_caps[], int8_t caps_count) {
     if(bytecode[0] != 0x4E || bytecode[1] != 0x56 || 
        bytecode[2] != 0x4D || bytecode[3] != 0x30) {
         LOG_WARN("Invalid NVM signature\n");
@@ -71,7 +71,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         return false;
     }
     
-    uint8_t opcode = proc->bytecode[proc->ip++];
+    int8_t opcode = proc->bytecode[proc->ip++];
     
     switch(opcode) {
         // Basic:
@@ -86,7 +86,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             
         case 0x02: // PUSH32 (was PUSH_BYTE)
             if(proc->ip + 3 < proc->size) {
-                uint32_t value = (proc->bytecode[proc->ip] << 24) |
+                int32_t value = (proc->bytecode[proc->ip] << 24) |
                                 (proc->bytecode[proc->ip + 1] << 16) |
                                 (proc->bytecode[proc->ip + 2] << 8) |
                                 proc->bytecode[proc->ip + 3];
@@ -354,7 +354,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         // Flow control (32-bit addresses):
         case 0x30: // JMP32
             if(proc->ip + 3 < proc->size) {
-                uint32_t addr = (proc->bytecode[proc->ip] << 24) |
+                int32_t addr = (proc->bytecode[proc->ip] << 24) |
                                (proc->bytecode[proc->ip + 1] << 16) |
                                (proc->bytecode[proc->ip + 2] << 8) |
                                proc->bytecode[proc->ip + 3];
@@ -375,7 +375,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             if (proc->sp > 0) {
                 int32_t value = proc->stack[--proc->sp];
                 if (proc->ip + 3 < proc->size) {
-                    uint32_t addr = (proc->bytecode[proc->ip] << 24) |
+                    int32_t addr = (proc->bytecode[proc->ip] << 24) |
                                    (proc->bytecode[proc->ip + 1] << 16) |
                                    (proc->bytecode[proc->ip + 2] << 8) |
                                    proc->bytecode[proc->ip + 3];
@@ -409,7 +409,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             if (proc->sp > 0) {
                 int32_t value = proc->stack[--proc->sp];
                 if (proc->ip + 3 < proc->size) {
-                    uint32_t addr = (proc->bytecode[proc->ip] << 24) |
+                    int32_t addr = (proc->bytecode[proc->ip] << 24) |
                                    (proc->bytecode[proc->ip + 1] << 16) |
                                    (proc->bytecode[proc->ip + 2] << 8) |
                                    proc->bytecode[proc->ip + 3];
@@ -441,7 +441,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
         case 0x33: // CALL32
             if(proc->ip + 3 < proc->size) {
-                uint32_t addr = (proc->bytecode[proc->ip] << 24) |
+                int32_t addr = (proc->bytecode[proc->ip] << 24) |
                                (proc->bytecode[proc->ip + 1] << 16) |
                                (proc->bytecode[proc->ip + 2] << 8) |
                                proc->bytecode[proc->ip + 3];
@@ -474,7 +474,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
         case 0x34: // RET
             if(proc->sp > 0) {
-                uint32_t return_addr = (uint32_t)proc->stack[--proc->sp];
+                int32_t return_addr = (int32_t)proc->stack[--proc->sp];
                 
                 if(return_addr >= 4 && return_addr < proc->size) {
                     proc->ip = return_addr;
@@ -495,7 +495,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         // Memory:
         case 0x40: // LOAD
             if(proc->ip < proc->size) {
-                uint8_t var_index = proc->bytecode[proc->ip++];
+                int8_t var_index = proc->bytecode[proc->ip++];
                 
                 if(var_index < MAX_LOCALS) {
                     int32_t value = proc->locals[var_index];
@@ -519,7 +519,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
         case 0x41: // STORE
             if(proc->ip < proc->size) {
-                uint8_t var_index = proc->bytecode[proc->ip++];
+                int8_t var_index = proc->bytecode[proc->ip++];
                 
                 if(var_index < MAX_LOCALS && proc->sp > 0) {
                     int32_t value = proc->stack[--proc->sp];
@@ -543,7 +543,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             }
 
             if(proc->sp > 0) {
-                uint32_t addr = (uint32_t)proc->stack[proc->sp - 1]; // get address from stack
+                int32_t addr = (int32_t)proc->stack[proc->sp - 1]; // get address from stack
 
                 if((addr >= 0x100000 && addr < 0xFFFFFFFF) || 
                 (addr >= 0xB8000 && addr <= 0xB8FA0)) {
@@ -582,14 +582,14 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             }
 
             if(proc->sp >= 2) {
-                uint32_t addr = (uint32_t)proc->stack[proc->sp - 2]; // address
+                int32_t addr = (int32_t)proc->stack[proc->sp - 2]; // address
                 int32_t value = proc->stack[proc->sp - 1]; // value
 
                 if((addr >= 0x100000 && addr < 0xFFFFFFFF) || 
                 (addr >= 0xB8000 && addr <= 0xB8FA0)) {
                     // Special handling for VGA text buffer - write only 16 bits (char + attribute)
                     if (addr >= 0xB8000 && addr <= 0xB8FA0) {
-                        *(uint16_t*)addr = (uint16_t)(value & 0xFFFF);
+                        *(int16_t*)addr = (int16_t)(value & 0xFFFF);
                         
                         // Debug VGA writes
                         char dbg[64];
@@ -636,7 +636,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             
         case 0x50: // SYSCALL
             if(proc->ip < proc->size) {
-                uint8_t syscall_id = proc->bytecode[proc->ip++];
+                int8_t syscall_id = proc->bytecode[proc->ip++];
                 syscall_handler(syscall_id, proc);
             }
             break;
@@ -659,8 +659,8 @@ void nvm_scheduler_tick() {
         return;
     }
     
-    uint8_t start = current_process;
-    uint8_t original = current_process;
+    int8_t start = current_process;
+    int8_t original = current_process;
 
     do {
         current_process = (current_process + 1) % MAX_PROCESSES;
@@ -696,7 +696,7 @@ void nvm_scheduler_tick() {
     }
 }
 
-void nvm_execute(uint8_t* bytecode, uint32_t size, uint16_t* capabilities, uint8_t caps_count) {
+void nvm_execute(int8_t* bytecode, int32_t size, int16_t* capabilities, int8_t caps_count) {
     int pid = nvm_create_process(bytecode, size, capabilities, caps_count);
     if(pid >= 0) {
         if (caps_count > 0) {
@@ -706,7 +706,7 @@ void nvm_execute(uint8_t* bytecode, uint32_t size, uint16_t* capabilities, uint8
 }
 
 // Function for get exit code
-int32_t nvm_get_exit_code(uint8_t pid) {
+int32_t nvm_get_exit_code(int8_t pid) {
     if(pid < MAX_PROCESSES && !processes[pid].active) {
         return processes[pid].exit_code;
     }
@@ -714,7 +714,7 @@ int32_t nvm_get_exit_code(uint8_t pid) {
 }
 
 // Function for check process activity
-bool nvm_is_process_active(uint8_t pid) {
+bool nvm_is_process_active(int8_t pid) {
     if(pid < MAX_PROCESSES) {
         return processes[pid].active;
     }

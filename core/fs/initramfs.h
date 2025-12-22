@@ -3,15 +3,16 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <core/arch/multiboot.h>
+#include <lib/bootloader/limine.h>
 
 struct program {
     const char* data;
     size_t size;
-    int ramfs_sector; 
+    int ramfs_sector;
 };
 
-void initramfs_load(multiboot_info_t* mb_info);
+void initramfs_load(struct limine_module_request* module_request);
+void initramfs_load_limine(volatile struct limine_module_request* module_request);
 struct program* initramfs_get_program(size_t index);
 size_t initramfs_get_count(void);
 int initramfs_load_to_ramfs(size_t index);

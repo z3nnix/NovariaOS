@@ -2,12 +2,12 @@
 #define MEM_H
 
 #include <stddef.h>
-#include <core/arch/multiboot.h>
+
 #include <core/arch/pause.h>
 #include <core/kernel/kstd.h>
 #include <core/drivers/serial.h>
 
-extern void initializeMemoryManager(void* memoryPool, size_t size);
+extern void initializeMemoryManager(void);
 extern void* memcpy(void* dest, const void* src, size_t n);
 extern void* memset(void* s, int c, size_t n);
 extern void* allocateMemory(size_t size);

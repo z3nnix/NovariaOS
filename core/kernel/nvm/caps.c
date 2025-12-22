@@ -4,7 +4,7 @@
 #include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
 
-bool caps_has_capability(nvm_process_t* proc, uint16_t cap) {
+bool caps_has_capability(nvm_process_t* proc, int16_t cap) {
     if (!proc) return false;
     
     for (int i = 0; i < proc->caps_count; i++) {
@@ -19,7 +19,7 @@ bool caps_has_capability(nvm_process_t* proc, uint16_t cap) {
     return false;
 }
 
-bool caps_add_capability(nvm_process_t* proc, uint16_t cap) {
+bool caps_add_capability(nvm_process_t* proc, int16_t cap) {
     if (!proc || proc->caps_count >= MAX_CAPS) return false;
     
     // We check whether such a capability already exists.
@@ -29,7 +29,7 @@ bool caps_add_capability(nvm_process_t* proc, uint16_t cap) {
     return true;
 }
 
-bool caps_remove_capability(nvm_process_t* proc, uint16_t cap) {
+bool caps_remove_capability(nvm_process_t* proc, int16_t cap) {
     if (!proc) return false;
     
     for (int i = 0; i < proc->caps_count; i++) {

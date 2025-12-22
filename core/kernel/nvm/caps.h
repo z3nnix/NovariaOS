@@ -21,9 +21,9 @@
 #define CAP_ALL               0xFFFF
 
 // CAPS management functions
-bool caps_has_capability(nvm_process_t* proc, uint16_t cap);
-bool caps_add_capability(nvm_process_t* proc, uint16_t cap);
-bool caps_remove_capability(nvm_process_t* proc, uint16_t cap);
+bool caps_has_capability(nvm_process_t* proc, int16_t cap);
+bool caps_add_capability(nvm_process_t* proc, int16_t cap);
+bool caps_remove_capability(nvm_process_t* proc, int16_t cap);
 void caps_clear_all(nvm_process_t* proc);
 bool caps_copy(nvm_process_t* dest, nvm_process_t* src);
 

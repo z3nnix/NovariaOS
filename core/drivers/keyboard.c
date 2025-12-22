@@ -60,7 +60,7 @@ static char keyboard_buffer_pop(void) {
 
 // Handle keyboard interrupt
 void keyboard_handler(void) {
-    uint8_t scancode = inb(KEYBOARD_DATA_PORT);
+    int8_t scancode = inb(KEYBOARD_DATA_PORT);
     
     if (scancode == 0xE0) {
         extended_scancode = true;
@@ -153,7 +153,7 @@ void keyboard_handler(void) {
 
 // Poll the keyboard (since we don't have interrupts set up yet)
 static void keyboard_poll(void) {
-    uint8_t status = inb(KEYBOARD_STATUS_PORT);
+    int8_t status = inb(KEYBOARD_STATUS_PORT);
     if (status & 0x01) { // Check if data is available
         keyboard_handler();
     }

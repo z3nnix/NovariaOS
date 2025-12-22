@@ -4,6 +4,6 @@
 #include <stdint.h>
 
 extern void pause();
-extern uint16_t inw(uint16_t port);
+extern int16_t inw(int16_t port);
 
 #endif

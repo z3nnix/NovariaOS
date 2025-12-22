@@ -10,7 +10,7 @@ bool cdrom_init(void);
 
 // Read sectors from CD-ROM
 // Returns pointer to data in memory (allocated statically)
-void* cdrom_read_sectors(uint32_t lba, uint32_t count);
+void* cdrom_read_sectors(int32_t lba, int32_t count);
 
 // Get the size of the boot ISO in bytes (if available)
 size_t cdrom_get_iso_size(void);

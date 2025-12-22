@@ -280,7 +280,7 @@ static void execute_command(const char* command) {
             if (data && size > 0) {
                 should_delay_prompt = 1;
                 delay_ticks = 20;
-                nvm_execute((uint8_t*)data, size, (uint16_t[]){CAP_ALL}, 1);
+                nvm_execute((int8_t*)data, size, (int16_t[]){CAP_ALL}, 1);
                 return;
             } else {
                 kprint("Error: Failed to read program file\n", 12);

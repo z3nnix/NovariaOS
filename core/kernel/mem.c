@@ -1,16 +1,29 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include <core/kernel/mem.h>
+#include <core/kernel/kstd.h>
+#include <lib/bootloader/limine.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdalign.h>
 #include <stdbool.h>
 
+// Limine requests
+static volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST_ID,
+    .revision = 0
+};
+
+static volatile struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
 typedef struct MemoryBlock {
-    uint32_t magic; 
-    size_t size; 
+    int32_t magic;
+    size_t size;
     struct MemoryBlock* next;
-    uint32_t checksum;
+    int32_t checksum;
 } MemoryBlock;
 
 #define MAGIC_ALLOC      0xABCD1234
@@ -21,11 +34,14 @@ typedef struct MemoryBlock {
 static MemoryBlock* freeList = NULL;
 static void* poolStart = NULL;
 static size_t poolSizeTotal = 0;
+static uint64_t hhdmOffset = 0;
 
 static void panic(const char* message);
 static void mergeFreeBlocks();
 static bool validateBlock(MemoryBlock* block);
-static uint32_t calculateChecksum(MemoryBlock* block);
+static int32_t calculateChecksum(MemoryBlock* block);
+static void* physicalToVirtual(uint64_t physical);
+static uint64_t virtualToPhysical(void* virtual);
 
 void formatMemorySize(size_t size, char* buffer) {
     const char* units[] = {"B", "KB", "MB", "GB"};
@@ -69,26 +85,61 @@ void formatMemorySize(size_t size, char* buffer) {
     *buf_ptr = '\0';
 }
 
-void initializeMemoryManager(void* memoryPool, size_t poolSize) {
-    if (memoryPool == NULL) {
-        panic("Memory pool is NULL");
+void initializeMemoryManager(void) {
+    // Get HHDM offset
+    if (hhdm_request.response == NULL) {
+        panic("HHDM request failed");
+        return;
     }
-    
-    if (poolSize < MIN_BLOCK_SIZE) {
-        char buffer[64];
-        formatMemorySize(poolSize, buffer);
-        kprint("Kernel panic - Memory pool too small (", 4);
-        kprint(buffer, 4);
-        kprint(")\n", 4);
-        panic("Memory pool too small");
+    hhdmOffset = hhdm_request.response->offset;
+
+    // Get memory map
+    if (memmap_request.response == NULL) {
+        panic("Memory map request failed");
+        return;
     }
 
-    poolStart = memoryPool;
-    poolSizeTotal = poolSize;
+    struct limine_memmap_response* memmap = memmap_request.response;
+    kprint(":: Scanning memory map...\n", 7);
 
-    freeList = (MemoryBlock*)memoryPool;
+    // Find the largest usable memory region
+    size_t maxUsableSize = 0;
+    struct limine_memmap_entry* bestEntry = NULL;
+
+    for (size_t i = 0; i < memmap->entry_count; i++) {
+        struct limine_memmap_entry* entry = memmap->entries[i];
+
+        if (entry->type == LIMINE_MEMMAP_USABLE) {
+            if (entry->length > maxUsableSize) {
+                maxUsableSize = entry->length;
+                bestEntry = entry;
+            }
+
+            char buffer[64];
+            formatMemorySize(entry->length, buffer);
+            kprint("  Usable: 0x", 7);
+            kprint_hex(entry->base, 7);
+            kprint(" - 0x", 7);
+            kprint_hex(entry->base + entry->length, 7);
+            kprint(" (", 7);
+            kprint(buffer, 7);
+            kprint(")\n", 7);
+        }
+    }
+
+    if (bestEntry == NULL || bestEntry->length < MIN_BLOCK_SIZE) {
+        panic("No suitable memory region found");
+        return;
+    }
+
+    // Use the largest usable region for our heap
+    poolStart = (void*)(bestEntry->base + hhdmOffset);
+    poolSizeTotal = bestEntry->length;
+
+    // Initialize free list
+    freeList = (MemoryBlock*)poolStart;
     freeList->magic = MAGIC_FREE;
-    freeList->size = poolSize - sizeof(MemoryBlock);
+    freeList->size = poolSizeTotal - sizeof(MemoryBlock);
     freeList->next = NULL;
     freeList->checksum = calculateChecksum(freeList);
 
@@ -96,7 +147,9 @@ void initializeMemoryManager(void* memoryPool, size_t poolSize) {
     formatMemorySize(freeList->size, buffer);
     kprint(":: Memory initialized (", 7);
     kprint(buffer, 7);
-    kprint(")\n", 7);
+    kprint(") at 0x", 7);
+    kprint_hex((uint64_t)poolStart, 7);
+    kprint("\n", 7);
 }
 
 void* allocateMemory(size_t size) {
@@ -144,18 +197,20 @@ void* allocateMemory(size_t size) {
 
 void freeMemory(void* ptr) {
     if (ptr == NULL) return;
-    
-    MemoryBlock* block = (MemoryBlock*)((char*)ptr - sizeof(MemoryBlock));
-    
-    if ((char*)block < (char*)poolStart || 
-        (char*)block + block->size + sizeof(MemoryBlock) > (char*)poolStart + poolSizeTotal) {
+
+    MemoryBlock* block = (MemoryBlock*)((uintptr_t)ptr - sizeof(MemoryBlock));
+
+    // Check if block is within our pool boundaries
+    if ((uintptr_t)block < (uintptr_t)poolStart ||
+        (uintptr_t)block + block->size + sizeof(MemoryBlock) > (uintptr_t)poolStart + poolSizeTotal) {
         panic("Invalid memory address in free");
     }
-    
+
     if (!validateBlock(block) || block->magic != MAGIC_ALLOC) {
         panic("Double free or corrupted block");
     }
-    
+
+    // Check for double free
     for (MemoryBlock* curr = freeList; curr; curr = curr->next) {
         if (curr == block) {
             panic("Double free detected");
@@ -167,7 +222,7 @@ void freeMemory(void* ptr) {
     block->next = freeList;
     block->checksum = calculateChecksum(block);
     freeList = block;
-    
+
     mergeFreeBlocks();
 }
 
@@ -191,12 +246,13 @@ static void mergeFreeBlocks() {
 
 static bool validateBlock(MemoryBlock* block) {
     if (block == NULL) return false;
-    
-    if ((char*)block < (char*)poolStart || 
-        (char*)block + sizeof(MemoryBlock) > (char*)poolStart + poolSizeTotal) {
+
+    // Check if block is within our pool boundaries
+    if ((uintptr_t)block < (uintptr_t)poolStart ||
+        (uintptr_t)block + sizeof(MemoryBlock) > (uintptr_t)poolStart + poolSizeTotal) {
         return false;
     }
-    
+
     if (block->magic != MAGIC_ALLOC && block->magic != MAGIC_FREE) {
         return false;
     }
@@ -204,26 +260,34 @@ static bool validateBlock(MemoryBlock* block) {
     return block->checksum == calculateChecksum(block);
 }
 
-static uint32_t calculateChecksum(MemoryBlock* block) {
-    uint32_t sum = 0;
-    uint8_t* bytes = (uint8_t*)block;
-    for (size_t i = 0; i < sizeof(MemoryBlock) - sizeof(uint32_t); i++) {
+static int32_t calculateChecksum(MemoryBlock* block) {
+    int32_t sum = 0;
+    int8_t* bytes = (int8_t*)block;
+    for (size_t i = 0; i < sizeof(MemoryBlock) - sizeof(int32_t); i++) {
         sum = (sum << 3) ^ bytes[i];
     }
     return sum;
+}
+
+static void* physicalToVirtual(uint64_t physical) {
+    return (void*)(physical + hhdmOffset);
+}
+
+static uint64_t virtualToPhysical(void* virtual) {
+    return (uint64_t)virtual - hhdmOffset;
 }
 
 static void panic(const char* message) {
     kprint("KERNEL PANIC: ", 4);
     kprint(message, 4);
     kprint("\n", 4);
-    
+
     pause();
 }
 
 void mm_test() {
     kprint(":: Starting memory test...\n\n", 7);
-    
+
     kprint("Allocating 256 bytes...\n", 7);
     void* ptr1 = allocateMemory(256);
     if (ptr1 != NULL) {
@@ -247,7 +311,7 @@ void mm_test() {
     }
 
     kprint("\nTesting edge cases...\n", 7);
-    void* ptr4 = allocateMemory(poolSizeTotal - sizeof(MemoryBlock) - 1);
+    void* ptr4 = allocateMemory(1024 * 1024); // 1MB allocation
     if (ptr4) {
         kprint("Large allocation OK\n", 2);
         freeMemory(ptr4);

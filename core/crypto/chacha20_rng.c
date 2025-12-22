@@ -1,29 +1,29 @@
 #include "chacha20_rng.h"
 
-static uint32_t rotl32(uint32_t x, int n)
+static int32_t rotl32(int32_t x, int n)
 {
     return (x << n) | (x >> (32 - n));
 }
 
-static uint32_t pack4(const uint8_t *a)
+static int32_t pack4(const int8_t *a)
 {
-    return ((uint32_t)a[0]) | ((uint32_t)a[1] << 8) | 
-           ((uint32_t)a[2] << 16) | ((uint32_t)a[3] << 24);
+    return ((int32_t)a[0]) | ((int32_t)a[1] << 8) | 
+           ((int32_t)a[2] << 16) | ((int32_t)a[3] << 24);
 }
 
-static void memory_copy(uint8_t *dst, const uint8_t *src, uint32_t n)
+static void memory_copy(int8_t *dst, const int8_t *src, int32_t n)
 {
-    for(uint32_t i = 0; i < n; i++) dst[i] = src[i];
+    for(int32_t i = 0; i < n; i++) dst[i] = src[i];
 }
 
-static void memory_set(uint8_t *dst, uint8_t val, uint32_t n)
+static void memory_set(int8_t *dst, int8_t val, int32_t n)
 {
-    for(uint32_t i = 0; i < n; i++) dst[i] = val;
+    for(int32_t i = 0; i < n; i++) dst[i] = val;
 }
 
-static void chacha20_init_block(struct chacha20_rng *rng, uint8_t key[], uint8_t nonce[])
+static void chacha20_init_block(struct chacha20_rng *rng, int8_t key[], int8_t nonce[])
 {
-    const uint8_t magic[16] = {101,120,112,97,110,100,32,51,50,45,98,121,116,101,32,107};
+    const int8_t magic[16] = {101,120,112,97,110,100,32,51,50,45,98,121,116,101,32,107};
     
     memory_copy(rng->key, key, 32);
     memory_copy(rng->nonce, nonce, 12);
@@ -41,15 +41,15 @@ static void chacha20_init_block(struct chacha20_rng *rng, uint8_t key[], uint8_t
     rng->state[15] = pack4(nonce + 8);
 }
 
-static void chacha20_block_set_counter(struct chacha20_rng *rng, uint64_t counter)
+static void chacha20_block_set_counter(struct chacha20_rng *rng, int counter)
 {
-    rng->state[12] = (uint32_t)counter;
-    rng->state[13] = pack4(rng->nonce) + (uint32_t)(counter >> 32);
+    rng->state[12] = (int32_t)counter;
+    rng->state[13] = pack4(rng->nonce) + (int32_t)(counter >> 32);
 }
 
 static void chacha20_block_next(struct chacha20_rng *rng)
 {
-    uint32_t x[16];
+    int32_t x[16];
     for(int i = 0; i < 16; i++) x[i] = rng->state[i];
     
     for(int i = 0; i < 10; i++)
@@ -97,20 +97,20 @@ static void chacha20_block_next(struct chacha20_rng *rng)
     
     for(int i = 0; i < 16; i++) rng->keystream32[i] = x[i] + rng->state[i];
     
-    uint32_t *counter = &rng->state[12];
+    int32_t *counter = &rng->state[12];
     counter[0]++;
     if(counter[0] == 0) counter[1]++;
 }
 
 void chacha20_rng_init(struct chacha20_rng *rng, uint64_t seed)
 {
-    memory_set((uint8_t*)rng, 0, sizeof(struct chacha20_rng));
+    memory_set((int8_t*)rng, 0, sizeof(struct chacha20_rng));
     
-    uint8_t key[32];
-    uint8_t nonce[12];
+    int8_t key[32];
+    int8_t nonce[12];
     
-    for(int i = 0; i < 32; i++) key[i] = (uint8_t)(seed >> (i % 8 * 8));
-    for(int i = 0; i < 12; i++) nonce[i] = (uint8_t)(seed >> (i % 8 * 8)) ^ 0xAA;
+    for(int i = 0; i < 32; i++) key[i] = (int8_t)(seed >> (i % 8 * 8));
+    for(int i = 0; i < 12; i++) nonce[i] = (int8_t)(seed >> (i % 8 * 8)) ^ 0xAA;
     
     chacha20_init_block(rng, key, nonce);
     chacha20_block_set_counter(rng, 0);
@@ -118,7 +118,7 @@ void chacha20_rng_init(struct chacha20_rng *rng, uint64_t seed)
     rng->position = 64;
 }
 
-uint32_t chacha20_rng_next32(struct chacha20_rng *rng)
+int32_t chacha20_rng_next32(struct chacha20_rng *rng)
 {
     if(rng->position >= 64)
     {
@@ -126,25 +126,25 @@ uint32_t chacha20_rng_next32(struct chacha20_rng *rng)
         rng->position = 0;
     }
     
-    uint32_t *keystream32 = rng->keystream32;
-    uint32_t result = keystream32[rng->position / 4];
+    int32_t *keystream32 = rng->keystream32;
+    int32_t result = keystream32[rng->position / 4];
     rng->position += 4;
     
     return result;
 }
 
-uint64_t chacha20_rng_next64(struct chacha20_rng *rng)
+int chacha20_rng_next64(struct chacha20_rng *rng)
 {
-    uint64_t high = chacha20_rng_next32(rng);
-    uint64_t low = chacha20_rng_next32(rng);
+    int high = chacha20_rng_next32(rng);
+    int low = chacha20_rng_next32(rng);
     return (high << 32) | low;
 }
 
-void chacha20_rng_bytes(struct chacha20_rng *rng, uint8_t *buffer, uint32_t size)
+void chacha20_rng_bytes(struct chacha20_rng *rng, int8_t *buffer, int32_t size)
 {
-    uint8_t *keystream8 = (uint8_t*)rng->keystream32;
+    int8_t *keystream8 = (int8_t*)rng->keystream32;
     
-    for(uint32_t i = 0; i < size; i++)
+    for(int32_t i = 0; i < size; i++)
     {
         if(rng->position >= 64)
         {

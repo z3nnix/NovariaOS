@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 static int has_rdrand(void) {
-    uint32_t ecx = 0;
+    int32_t ecx = 0;
     asm volatile(
         "mov $1, %%eax\n\t"
         "cpuid\n\t"
@@ -18,8 +18,8 @@ uint64_t get_hw_entropy(void) {
 
     if(has_rdrand()) {
         for(int attempts = 0; attempts < 10; attempts++) {
-            uint8_t success = 0;
-            uint32_t low = 0, high = 0;
+            int8_t success = 0;
+            int32_t low = 0, high = 0;
 
             asm volatile(
                 "rdrand %%eax\n\t"
@@ -49,8 +49,8 @@ uint64_t get_hw_entropy(void) {
     }
     
     // Fallback:
-    uint32_t tsc_low, tsc_high;
-    uint32_t stack_addr;
+    int32_t tsc_low, tsc_high;
+    int32_t stack_addr;
     
     asm volatile(
         "rdtsc\n\t"

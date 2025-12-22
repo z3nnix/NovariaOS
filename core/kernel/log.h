@@ -158,21 +158,22 @@ static inline void log_format_basic(const char* level, const char* format, ...) 
     
     buffer[buf_pos] = '\0';
     serial_print(buffer);
-    syslog_write_to_buffer(buffer);
+    kprint(buffer, 14);
+    // syslog_write_to_buffer(buffer);
 }
 
-static inline void syslog_init(void) {
-    log_buffer[0] = '\0';
-    log_size = 0;
+// static inline void syslog_init(void) {
+//     log_buffer[0] = '\0';
+//     log_size = 0;
     
-    const char* init_msg = "=== NovariaOS System Log ===\n";
-    int i = 0;
-    while (init_msg[i] != '\0' && log_size < MAX_LOG_SIZE - 1) {
-        log_buffer[log_size++] = init_msg[i++];
-    }
-    log_buffer[log_size] = '\0';
-    vfs_create("/var/log/system.log", log_buffer, log_size);
-}
+//     const char* init_msg = "=== NovariaOS System Log ===\n";
+//     int i = 0;
+//     while (init_msg[i] != '\0' && log_size < MAX_LOG_SIZE - 1) {
+//         log_buffer[log_size++] = init_msg[i++];
+//     }
+//     log_buffer[log_size] = '\0';
+//     vfs_create("/var/log/system.log", log_buffer, log_size);
+// }
 
 #define LOG_FATAL(...) do { if (LOG_LEVEL_FATAL <= CURRENT_LOG_LEVEL) log_format_basic("FATAL", __VA_ARGS__); } while(0)
 #define LOG_ERROR(...) do { if (LOG_LEVEL_ERROR <= CURRENT_LOG_LEVEL) log_format_basic("ERROR", __VA_ARGS__); } while(0)

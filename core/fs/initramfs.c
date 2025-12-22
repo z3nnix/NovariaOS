@@ -2,7 +2,7 @@
 
 #include <core/fs/initramfs.h>
 #include <core/fs/ramfs.h>
-#include <core/arch/multiboot.h>
+
 #include <core/kernel/mem.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -14,22 +14,34 @@
 static struct program programs[MAX_PROGRAMS];
 static size_t program_count = 0;
 
-void initramfs_load(multiboot_info_t* mb_info) {
-    if (!(mb_info->flags & 0x08)) {
-        kprint("No modules found in multiboot info\n", 14);
+void initramfs_load(struct limine_module_request* module_request) {
+    initramfs_load_limine(module_request);
+}
+
+void initramfs_load_limine(volatile struct limine_module_request* module_request) {
+    if (!module_request->response || module_request->response->module_count == 0) {
+        kprint("No modules found in Limine info\n", 14);
         return;
     }
-    
-    if (mb_info->mods_count == 0) {
-        kprint("No modules to load\n", 14);
+
+    // Find initramfs module (skip ISO if present)
+    struct limine_file* initramfs_module = NULL;
+    for (uint64_t i = 0; i < module_request->response->module_count; i++) {
+        struct limine_file* module = module_request->response->modules[i];
+        // Skip modules that are too small to be initramfs
+        if (module->size > 1024) {  // Minimum reasonable size
+            initramfs_module = module;
+            break;
+        }
+    }
+
+    if (!initramfs_module) {
+        kprint("No suitable initramfs module found\n", 14);
         return;
     }
-    
-    module_t* modules = (module_t*)mb_info->mods_addr;
-    module_t* module = &modules[0];
-    
-    uint8_t *initramfs_data = (uint8_t*)module->mod_start;
-    size_t initramfs_size = module->mod_end - module->mod_start;
+
+    int8_t *initramfs_data = (int8_t*)initramfs_module->address;
+    size_t initramfs_size = initramfs_module->size;
     
     kprint(":: Loading initramfs..\n", 7);
     
@@ -42,7 +54,7 @@ void initramfs_load(multiboot_info_t* mb_info) {
             break;
         }
         
-        uint32_t prog_size = 0;
+        int32_t prog_size = 0;
         for (int i = 0; i < 4; i++) {
             prog_size = (prog_size << 8) | initramfs_data[offset++];
         }

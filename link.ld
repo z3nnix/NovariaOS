@@ -1,27 +1,42 @@
-ENTRY(start)
+/* Entry point */
+ENTRY(_start)
 
-SECTIONS {
-    . = 1M;
+/* Библиотека Limine */
+PROVIDE(hhdm = 0xffff800000000000);
 
-    .multiboot_header : {
-        *(.multiboot_header)
-    }
+SECTIONS
+{
+    /* Ядро загружается по адресу в высшей половине */
+    . = 0xffffffff80000000;
 
-    .text BLOCK(4K) : ALIGN(4K) {
+    /* Мультизагрузочный заголовок (не нужен для Limine, но оставляем) */
+    .multiboot : {
         *(.multiboot)
+    }
+
+    .text : {
         *(.text)
+        *(.text.*)
     }
 
-    .rodata BLOCK(4K) : ALIGN(4K) {
+    .rodata : ALIGN(0x1000) {
         *(.rodata)
+        *(.rodata.*)
     }
 
-    .data BLOCK(4K) : ALIGN(4K) {
+    .data : ALIGN(0x1000) {
         *(.data)
+        *(.data.*)
     }
 
-    .bss BLOCK(4K) : ALIGN(4K) {
+    .bss : ALIGN(0x1000) {
         *(COMMON)
         *(.bss)
+        *(.bss.*)
+    }
+
+    /DISCARD/ : {
+        *(.comment)
+        *(.note.*)
     }
 }

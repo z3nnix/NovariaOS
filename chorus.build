@@ -3,10 +3,10 @@ variables:
   ASM: nasm
   LD: ld
   GRUB_MKRESCUE: grub-mkrescue
-  QEMU: qemu-system-i386
-  CFLAGS: -I./. -fno-stack-protector -m32 -c
-  ASMFLAGS: -f elf32
-  LDFLAGS: -m elf_i386 -T link.ld -z noexecstack
+  QEMU: qemu-system-x86_64
+  CFLAGS: -I./. -fno-stack-protector -m64 -mcmodel=large -nostdlib -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -c
+  ASMFLAGS: -f elf64
+  LDFLAGS: -nostdlib -m elf_x86_64 -T link.ld -z noexecstack
   BUILD_DIR: build
   KERNEL_OUT: kernel.bin
   DATE: "$(date +%Y-%m-%d)"
@@ -16,7 +16,7 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, pause.o, kc.o, kstd.o, mem.o, nvm.o, syscalls.o, caps.o, fb.o, timer.o, serial.o, keyboard.o, cdrom.o, shell.o, ramfs.o, initramfs.o, iso9660.o, vfs.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_ls.o, us_cat.o, us_rm.o, us_write.o, us_nova.o, us_uname.o, chacha20.o, chacha20_rng.o, entropy.o]
+    deps: [kasm.o, pause.o, kc.o, caps.o, kstd.o, fb.o, serial.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"

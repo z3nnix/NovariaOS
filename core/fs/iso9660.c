@@ -7,7 +7,7 @@
 static void* iso_data = NULL;
 static size_t iso_data_size = 0;
 static iso9660_pvd_t* primary_volume = NULL;
-static uint16_t block_size = 2048;
+static int16_t block_size = 2048;
 static bool initialized = false;
 
 static int strcmp(const char* s1, const char* s2) {
@@ -34,11 +34,11 @@ static size_t strlen(const char* s) {
     return len;
 }
 
-static void* read_block(uint32_t lba) {
+static void* read_block(int32_t lba) {
     if (!iso_data || lba * block_size >= iso_data_size) {
         return NULL;
     }
-    return (void*)((uint8_t*)iso_data + lba * block_size);
+    return (void*)((int8_t*)iso_data + lba * block_size);
 }
 
 static void normalize_filename(const char* iso_name, size_t iso_len, char* out, size_t out_size) {
@@ -58,8 +58,8 @@ static void to_lowercase(char* str) {
     }
 }
 
-static iso9660_dir_entry_t* find_entry_in_dir(uint32_t dir_extent, uint32_t dir_size, const char* name) {
-    uint8_t* dir_data = (uint8_t*)read_block(dir_extent);
+static iso9660_dir_entry_t* find_entry_in_dir(int32_t dir_extent, int32_t dir_size, const char* name) {
+    int8_t* dir_data = (int8_t*)read_block(dir_extent);
     if (!dir_data) return NULL;
     
     size_t offset = 0;
@@ -68,7 +68,7 @@ static iso9660_dir_entry_t* find_entry_in_dir(uint32_t dir_extent, uint32_t dir_
         if (entry->length == 0) break;
         
         char* entry_name = (char*)(entry + 1);
-        uint8_t name_len = entry->name_len;
+        int8_t name_len = entry->name_len;
         
         if (name_len == 1 && (entry_name[0] == 0 || entry_name[0] == 1)) {
             offset += entry->length;
@@ -114,8 +114,8 @@ const void* iso9660_find_file(const char* path, size_t* size) {
     }
     
     iso9660_dir_entry_t* root = (iso9660_dir_entry_t*)primary_volume->root_directory_entry;
-    uint32_t current_extent = root->extent_le;
-    uint32_t current_size = root->size_le;
+    int32_t current_extent = root->extent_le;
+    int32_t current_size = root->size_le;
     
     char path_copy[256];
     size_t path_len = strlen(path);
@@ -192,11 +192,11 @@ void iso9660_list_dir(const char* path) {
     
     size_t offset = 0;
     while (offset < dir_size) {
-        iso9660_dir_entry_t* entry = (iso9660_dir_entry_t*)((uint8_t*)dir_data + offset);
+        iso9660_dir_entry_t* entry = (iso9660_dir_entry_t*)((int8_t*)dir_data + offset);
         if (entry->length == 0) break;
         
         char* entry_name = (char*)(entry + 1);
-        uint8_t name_len = entry->name_len;
+        int8_t name_len = entry->name_len;
         
         if (name_len == 1 && (entry_name[0] == 0 || entry_name[0] == 1)) {
             offset += entry->length;
@@ -231,7 +231,7 @@ bool iso9660_is_initialized(void) {
     return initialized;
 }
 
-static void mount_dir_recursive(const char* mount_point, const char* iso_path, uint32_t dir_extent, uint32_t dir_size);
+static void mount_dir_recursive(const char* mount_point, const char* iso_path, int32_t dir_extent, int32_t dir_size);
 
 void iso9660_mount_to_vfs(const char* mount_point, const char* iso_path) {
     if (!initialized || !primary_volume) {
@@ -254,11 +254,11 @@ void iso9660_mount_to_vfs(const char* mount_point, const char* iso_path) {
     
     size_t offset = 0;
     while (offset < dir_size) {
-        iso9660_dir_entry_t* entry = (iso9660_dir_entry_t*)((uint8_t*)dir_data + offset);
+        iso9660_dir_entry_t* entry = (iso9660_dir_entry_t*)((int8_t*)dir_data + offset);
         if (entry->length == 0) break;
         
         char* entry_name = (char*)(entry + 1);
-        uint8_t name_len = entry->name_len;
+        int8_t name_len = entry->name_len;
         
         if (name_len == 1 && (entry_name[0] == 0 || entry_name[0] == 1)) {
             offset += entry->length;
@@ -298,11 +298,11 @@ void iso9660_mount_to_vfs(const char* mount_point, const char* iso_path) {
     }
 }
 
-static void mount_dir_recursive(const char* mount_point, const char* iso_path, uint32_t dir_extent, uint32_t dir_size) {
+static void mount_dir_recursive(const char* mount_point, const char* iso_path, int32_t dir_extent, int32_t dir_size) {
     extern void vfs_create(const char* filename, const char* data, size_t size);
     extern void vfs_mkdir(const char* dirname);
     
-    uint8_t* dir_data = (uint8_t*)read_block(dir_extent);
+    int8_t* dir_data = (int8_t*)read_block(dir_extent);
     if (!dir_data) return;
     
     size_t offset = 0;
@@ -312,7 +312,7 @@ static void mount_dir_recursive(const char* mount_point, const char* iso_path, u
         if (entry->length == 0) break;
         
         char* entry_name = (char*)(entry + 1);
-        uint8_t name_len = entry->name_len;
+        int8_t name_len = entry->name_len;
         
         if (name_len == 1 && (entry_name[0] == 0 || entry_name[0] == 1)) {
             offset += entry->length;
