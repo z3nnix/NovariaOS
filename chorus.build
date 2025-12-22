@@ -16,7 +16,7 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, pause.o, kc.o, caps.o, kstd.o, fb.o, serial.o]
+    deps: [kasm.o, pause.o, kc.o, caps.o, kstd.o, mem.o, fb.o, serial.o, ramfs.o, initramfs.o, vfs.o, entropy.o, chacha20.o, chacha20_rng.o, cdrom.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"

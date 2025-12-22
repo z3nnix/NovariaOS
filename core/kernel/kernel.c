@@ -20,19 +20,8 @@
 #include <stdbool.h>
 #include <lib/bootloader/limine.h>
 
-
-static volatile struct limine_memmap_request memmap_request = {
-    .id = { LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62 },
-    .revision = 0
-};
-
 static volatile struct limine_module_request module_request = {
     .id = { LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee },
-    .revision = 0
-};
-
-static volatile struct limine_hhdm_request hhdm_request = {
-    .id = { LIMINE_COMMON_MAGIC, 0x48dcf1cb8ad2b852, 0x63984e959a98244b },
     .revision = 0
 };
 
@@ -71,8 +60,6 @@ void limine_smp_entry(struct limine_mp_info *info) {
 }
 
 void kmain() {
-    // enable_cursor();
-
     const char* ascii_art[] = {
         " _   _                      _        ___  ____  ",
         "| \\ | | _____   ____ _ _ __(_) __ _ / _ \\/ ___| ",
@@ -90,18 +77,15 @@ void kmain() {
     kprint("@NovariaOS\n", 9);
 
     kprint(":: Initializing memory manager...\n", 7);
-    // initializeMemoryManager();
+    initializeMemoryManager();
 
-    LOG_DEBUG("test\n");
     init_serial();
-    // ramfs_init();
-    // vfs_init();
-    // syslog_init();
+    ramfs_init();
+    vfs_init();
+    syslog_init();
     // keyboard_init();
     
-    // LOG_DEBUG("System initialization started\n");
-    
-    // cdrom_init();
+    cdrom_init();
     
     // void* iso_location = NULL;
     // size_t iso_size = 0;

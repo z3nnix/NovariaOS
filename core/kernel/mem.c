@@ -100,7 +100,6 @@ void initializeMemoryManager(void) {
     }
 
     struct limine_memmap_response* memmap = memmap_request.response;
-    kprint(":: Scanning memory map...\n", 7);
 
     // Find the largest usable memory region
     size_t maxUsableSize = 0;
@@ -114,16 +113,6 @@ void initializeMemoryManager(void) {
                 maxUsableSize = entry->length;
                 bestEntry = entry;
             }
-
-            char buffer[64];
-            formatMemorySize(entry->length, buffer);
-            kprint("  Usable: 0x", 7);
-            kprint_hex(entry->base, 7);
-            kprint(" - 0x", 7);
-            kprint_hex(entry->base + entry->length, 7);
-            kprint(" (", 7);
-            kprint(buffer, 7);
-            kprint(")\n", 7);
         }
     }
 
@@ -147,8 +136,7 @@ void initializeMemoryManager(void) {
     formatMemorySize(freeList->size, buffer);
     kprint(":: Memory initialized (", 7);
     kprint(buffer, 7);
-    kprint(") at 0x", 7);
-    kprint_hex((uint64_t)poolStart, 7);
+    kprint(")", 7);
     kprint("\n", 7);
 }
 
