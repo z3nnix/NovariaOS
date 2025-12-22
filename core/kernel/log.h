@@ -23,7 +23,7 @@
 static char log_buffer[MAX_LOG_SIZE];
 static size_t log_size = 0;
 
-static inline void syslog_write_to_buffer(const char* message) {
+static inline void syslog_print(const char* message) {
     if (!message) return;
     
     int i = 0;
@@ -158,8 +158,7 @@ static inline void log_format_basic(const char* level, const char* format, ...) 
     
     buffer[buf_pos] = '\0';
     serial_print(buffer);
-    kprint(buffer, 14);
-    syslog_write_to_buffer(buffer);
+    syslog_print(buffer);
 }
 
 static inline void syslog_init(void) {

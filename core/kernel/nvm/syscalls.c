@@ -8,6 +8,7 @@
 #include <core/kernel/log.h>
 #include <core/kernel/mem.h>
 #include <core/fs/vfs.h>
+#include <core/kernel/vge/fb_render.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include <core/drivers/timer.h>
+#include <core/kernel/vge/fb_render.h>
 #include <core/arch/idt.h>
 
 void pit_init() {

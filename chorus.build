@@ -16,7 +16,7 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, pause.o, kc.o, caps.o, kstd.o, mem.o, fb.o, serial.o, ramfs.o, initramfs.o, vfs.o, entropy.o, chacha20.o, chacha20_rng.o, cdrom.o]
+    deps: [kasm.o, pause.o, kc.o, caps.o, kstd.o, mem.o, fb.o, fb_render.o, serial.o, keyboard.o, ramfs.o, initramfs.o, vfs.o, iso9660.o, entropy.o, chacha20.o, chacha20_rng.o, cdrom.o, nvm.o, syscalls.o, shell.o, psf.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_rm.o, us_write.o, us_nova.o, us_uname.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"
@@ -67,7 +67,17 @@ targets:
   fb.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} core/drivers/fb.c -o ${@}"
+      - "${CC} ${CFLAGS} core/kernel/vge/fb.c -o ${@}"
+
+  fb_render.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} core/kernel/vge/fb_render.c -o ${@}"
+
+  psf.o:
+    deps: []
+    cmds:
+      - "${CC} ${CFLAGS} core/kernel/vge/psf.c -o ${@}"
 
   timer.o:
     deps: []
@@ -132,16 +142,6 @@ targets:
     deps: []
     cmds:
       - "${CC} ${CFLAGS} usr/bin/clear.c -o ${@}"
-
-  us_ls.o:
-    deps: []
-    cmds:
-      - "${CC} ${CFLAGS} usr/bin/ls.c -o ${@}"
-
-  us_cat.o:
-    deps: []
-    cmds:
-      - "${CC} ${CFLAGS} usr/bin/cat.c -o ${@}"
 
   us_rm.o:
     deps: []

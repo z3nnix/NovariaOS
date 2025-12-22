@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include <core/drivers/keyboard.h>
-#include <core/drivers/fb.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
@@ -37,7 +37,6 @@ static const char scancode_to_ascii_shifted[] = {
 static bool shift_pressed = false;
 static bool caps_lock = false;
 static bool ctrl_pressed = false;
-static bool extended_scancode = false;
 
 // Add a character to the buffer
 static void keyboard_buffer_push(char c) {
@@ -58,72 +57,44 @@ static char keyboard_buffer_pop(void) {
     return c;
 }
 
-// Handle keyboard interrupt
+// Handle keyboard scancode (polling mode)
 void keyboard_handler(void) {
     int8_t scancode = inb(KEYBOARD_DATA_PORT);
-    
-    if (scancode == 0xE0) {
-        extended_scancode = true;
-        return;
-    }
-    
+
     if (scancode & 0x80) {
         scancode &= 0x7F;
-        
+
         // Check for shift release
         if (scancode == 0x2A || scancode == 0x36) {
             shift_pressed = false;
         }
-        
+
         // Check for ctrl release
         if (scancode == 0x1D) {
             ctrl_pressed = false;
         }
-        
-        extended_scancode = false;
+
         return;
     }
-    
-    if (extended_scancode) {
-        extended_scancode = false;
-        
-        if (scancode == 0x49) {
-            vga_scroll_up();
-            return;
-        } else if (scancode == 0x51) {
-            vga_scroll_down();
-            return;
-        } else if (scancode == 0x48) {
-            if (ctrl_pressed) {
-                vga_scroll_up();
-            }
-            return;
-        } else if (scancode == 0x50) {
-            if (ctrl_pressed) {
-                vga_scroll_down();
-            }
-            return;
-        }
-        return;
-    }
-    
+
+    // Check for shift press
     if (scancode == 0x2A || scancode == 0x36) {
         shift_pressed = true;
         return;
     }
-    
+
     // Check for ctrl press
     if (scancode == 0x1D) {
         ctrl_pressed = true;
         return;
     }
-    
+
     // Check for caps lock
     if (scancode == 0x3A) {
         caps_lock = !caps_lock;
         return;
     }
-    
+
     // Convert scancode to ASCII
     char ascii = 0;
     if (scancode < sizeof(scancode_to_ascii)) {
@@ -131,20 +102,20 @@ void keyboard_handler(void) {
             ascii = scancode_to_ascii_shifted[scancode];
         } else {
             ascii = scancode_to_ascii[scancode];
-            
+
             // Handle caps lock for letters
             if (caps_lock && ascii >= 'a' && ascii <= 'z') {
                 ascii = ascii - 'a' + 'A';
             }
         }
-        
+
         // Handle Ctrl combinations
         if (ctrl_pressed && ascii >= 'a' && ascii <= 'z') {
             ascii = ascii - 'a' + 1; // Ctrl+A = 1, Ctrl+B = 2, etc.
         } else if (ctrl_pressed && ascii >= 'A' && ascii <= 'Z') {
             ascii = ascii - 'A' + 1;
         }
-        
+
         if (ascii != 0) {
             keyboard_buffer_push(ascii);
         }
@@ -166,7 +137,6 @@ void keyboard_init(void) {
     shift_pressed = false;
     caps_lock = false;
     ctrl_pressed = false;
-    extended_scancode = false;
 }
 
 // Check if a character is available
@@ -190,10 +160,10 @@ char keyboard_getchar(void) {
 // Read a line of input
 void keyboard_getline(char* buffer, int max_length) {
     int pos = 0;
-    
+
     while (pos < max_length - 1) {
         char c = keyboard_getchar();
-        
+
         if (c == '\n') {
             buffer[pos] = '\0';
             kprint("\n", 7);
@@ -201,14 +171,15 @@ void keyboard_getline(char* buffer, int max_length) {
         } else if (c == '\b') {
             if (pos > 0) {
                 pos--;
-                vga_backspace(); // Use proper backspace function
+                vga_backspace();
             }
+            continue;
         } else if (c >= 32 && c <= 126) { // Printable characters
             buffer[pos++] = c;
             char temp[2] = {c, '\0'};
             kprint(temp, 15);
         }
     }
-    
+
     buffer[pos] = '\0';
 }

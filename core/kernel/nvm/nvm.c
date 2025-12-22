@@ -2,6 +2,7 @@
 
 #include <core/kernel/nvm/syscall.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb_render.h>
 #include <core/kernel/log.h>
 #include <core/drivers/serial.h>
 #include <core/kernel/nvm/nvm.h>

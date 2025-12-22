@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include <core/drivers/serial.h>
+#include <core/kernel/vge/fb_render.h>
 
 // Assuming outb and inb functions are defined elsewhere
 extern void outb(unsigned short port, unsigned char val);

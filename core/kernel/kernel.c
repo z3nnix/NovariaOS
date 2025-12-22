@@ -5,7 +5,7 @@
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/drivers/serial.h>
-#include <core/drivers/fb.h>
+#include <core/kernel/vge/fb.h>
 #include <core/drivers/timer.h>
 #include <core/drivers/keyboard.h>
 #include <core/drivers/cdrom.h>
@@ -60,6 +60,81 @@ void limine_smp_entry(struct limine_mp_info *info) {
 }
 
 void kmain() {
+    kprint(":: Initializing memory manager...\n", 7);
+    initializeMemoryManager();
+
+    init_serial();
+    ramfs_init();
+    vfs_init();
+    syslog_init();
+    keyboard_init();
+    
+    cdrom_init();
+    
+    void* iso_location = NULL;
+    size_t iso_size = 0;
+
+    void* initramfs_location = NULL;
+    size_t initramfs_size = 0;
+    
+    if (module_request.response != NULL && module_request.response->module_count > 0) {
+        LOG_DEBUG("Checking Limine modules...\n");
+
+        for (uint64_t i = 0; i < module_request.response->module_count; i++) {
+            struct limine_file *module = module_request.response->modules[i];
+            LOG_DEBUG("Module %d: size=%d\n", i, module->size);
+
+            // Check for ISO9660 filesystem
+            if (module->size > 0x8005) {
+                char* sig = (char*)module->address + 0x8001;
+                if (sig[0] == 'C' && sig[1] == 'D' && sig[2] == '0' &&
+                    sig[3] == '0' && sig[4] == '1') {
+                    iso_location = (void*)module->address;
+                    iso_size = module->size;
+                    LOG_DEBUG("Found ISO9660 in module %d\n", i);
+                    continue;
+                }
+            }
+
+            // Check for initramfs (not ISO and reasonable size)
+            if (!initramfs_location && module->size > 0) {
+                initramfs_location = (void*)module->address;
+                initramfs_size = module->size;
+                LOG_DEBUG("Found initramfs in module %d, size=%d\n", i, initramfs_size);
+            }
+        }
+    }
+    
+    if (iso_location) {
+        cdrom_set_iso_data(iso_location, iso_size);
+        iso9660_init(iso_location, iso_size);
+        LOG_DEBUG("ISO9660 filesystem mounted\n");
+
+        iso9660_mount_to_vfs("/", "/");
+        LOG_DEBUG("ISO contents mounted to /\n");
+
+        // Debug: check if font file was mounted
+        LOG_DEBUG("Checking mounted files...\n");
+        vfs_list();
+
+        // Check specific files
+        bool usr_exists = vfs_exists("/usr");
+        bool lib_exists = vfs_exists("/usr/lib");
+        bool fonts_exists = vfs_exists("/usr/lib/fonts");
+        bool font_file_exists = vfs_exists("/usr/lib/fonts/UniCyrX-ibm-8x16.psf");
+
+        LOG_DEBUG("Directory checks:\n");
+        LOG_DEBUG("  /usr exists: %s\n", usr_exists ? "YES" : "NO");
+        LOG_DEBUG("  /usr/lib exists: %s\n", lib_exists ? "YES" : "NO");
+        LOG_DEBUG("  /usr/lib/fonts exists: %s\n", fonts_exists ? "YES" : "NO");
+        LOG_DEBUG("  Font file exists: %s\n", font_file_exists ? "YES" : "NO");
+
+        init_vge_font();
+        clear_screen();
+    } else {
+        LOG_DEBUG(":: ISO9660 filesystem not found\n");
+    }
+    
     const char* ascii_art[] = {
         " _   _                      _        ___  ____  ",
         "| \\ | | _____   ____ _ _ __(_) __ _ / _ \\/ ___| ",
@@ -76,77 +151,54 @@ void kmain() {
     kprint("                                 TG: ", 15);
     kprint("@NovariaOS\n", 9);
 
-    kprint(":: Initializing memory manager...\n", 7);
-    initializeMemoryManager();
+    if (initramfs_location) {
+        LOG_DEBUG("Loading initramfs at 0x%p, size=%d\n", initramfs_location, initramfs_size);
+        initramfs_load_from_memory(initramfs_location, initramfs_size);
+    } else {
+        LOG_DEBUG("Initramfs not found\n");
+    }
+    LOG_DEBUG("Initramfs loaded\n");
+    nvm_init();
+    LOG_DEBUG("NVM initialized\n");
+    LOG_DEBUG("Userspace programs registered\n");
 
-    init_serial();
-    ramfs_init();
-    vfs_init();
-    syslog_init();
-    // keyboard_init();
-    
-    cdrom_init();
-    
-    // void* iso_location = NULL;
-    // size_t iso_size = 0;
-    
-    // if (module_request.response != NULL && module_request.response->module_count > 0) {
-    //     LOG_DEBUG("Checking Limine modules for ISO9660...\n");
-        
-    //     for (uint64_t i = 0; i < module_request.response->module_count; i++) {
-    //         struct limine_file *module = module_request.response->modules[i];
-            
-    //         if (module->size > 0x8005) {
-    //             char* sig = (char*)module->address + 0x8001;
-    //             if (sig[0] == 'C' && sig[1] == 'D' && sig[2] == '0' && 
-    //                 sig[3] == '0' && sig[4] == '1') {
-    //                 iso_location = (void*)module->address;
-    //                 iso_size = module->size;
-    //                 LOG_DEBUG("Found ISO9660 in module\n");
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-    
-    // if (iso_location) {
-    //     cdrom_set_iso_data(iso_location, iso_size);
-    //     iso9660_init(iso_location, iso_size);
-    //     LOG_DEBUG("ISO9660 filesystem mounted\n");
+    size_t program_count = initramfs_get_count();
+    LOG_DEBUG("Initramfs program count: %d\n", program_count);
+    if (program_count > 0) {
+        for (size_t i = 0; i < program_count; i++) {
+            struct program* prog = initramfs_get_program(i);
+            if (prog && prog->size > 0) {
+                char buf[32];
+                int n = i;
+                char* p = buf;
+                if (n == 0) {
+                    *p++ = '0';
+                } else {
+                    char* start = p;
+                    while (n > 0) {
+                        *p++ = '0' + n % 10;
+                        n /= 10;
+                    }
+                    p--;
+                    while (start < p) {
+                        char temp = *start;
+                        *start = *p;
+                        *p = temp;
+                        start++;
+                        p--;
+                    }
+                }
+                *p = '\0';
+                
+                nvm_execute((uint8_t*)prog->data, prog->size, (uint16_t[]){CAP_ALL}, 1);
+            }
+        }
+    } else {
+        kprint(":: No programs found in initramfs\n", 14);
+    }
 
-    //     iso9660_mount_to_vfs("/", "/");
-    //     LOG_DEBUG("ISO contents mounted to /\n");
-    // } else {
-    //     LOG_DEBUG(":: ISO9660 filesystem not found\n");
-    // }
-    
-    // initramfs_load_limine(&module_request);
-    // LOG_DEBUG("Initramfs loaded\n");
-    // nvm_init();
-    // LOG_DEBUG("NVM initialized\n");
-    // userspace_init_programs();
-    // LOG_DEBUG("Userspace programs registered\n");
-
-    // // Print additional Limine information
-    // if (kernel_address_request.response) {
-    //     LOG_DEBUG("Kernel loaded at: 0x%lx\n", kernel_address_request.response->physical_base);
-    //     LOG_DEBUG("Kernel virtual base: 0x%lx\n", kernel_address_request.response->virtual_base);
-    // }
-
-    // if (smp_request.response) {
-    //     LOG_DEBUG("SMP: %lu CPUs available\n", smp_request.response->cpu_count);
-
-    //     // Set entry point for additional CPUs
-    //     for (uint64_t i = 0; i < smp_request.response->cpu_count; i++) {
-    //         if (smp_request.response->cpus[i]->lapic_id != smp_request.response->bsp_lapic_id) {
-    //             smp_request.response->cpus[i]->goto_address = (limine_goto_address)&limine_smp_entry;
-    //         }
-    //     }
-    // }
-
-    // if (paging_mode_request.response) {
-    //     LOG_DEBUG("Paging mode: %u\n", paging_mode_request.response->mode);
-    // }
+     shell_init();
+     shell_run();
 
     // while(true) {
     //     nvm_scheduler_tick();

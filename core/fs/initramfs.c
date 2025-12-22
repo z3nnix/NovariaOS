@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb_render.h>
 #include <core/kernel/mem.h>
 
 #define MAX_PROGRAMS 64
@@ -16,6 +17,167 @@ static size_t program_count = 0;
 
 void initramfs_load(struct limine_module_request* module_request) {
     initramfs_load_limine(module_request);
+}
+
+void initramfs_load_from_memory(void* initramfs_data, size_t initramfs_size) {
+    if (!initramfs_data || initramfs_size == 0) {
+        kprint("No initramfs data provided\n", 14);
+        return;
+    }
+
+    int8_t *data = (int8_t*)initramfs_data;
+
+    kprint(":: Loading initramfs from memory\n", 7); // (size=%d)..\n", 7, initramfs_size);
+
+    // Reset program count for this loading
+    program_count = 0;
+    size_t offset = 0;
+
+    while (offset < initramfs_size && program_count < MAX_PROGRAMS) {
+        if (offset + 4 > initramfs_size) {
+            kprint("Incomplete size field in initramfs\n", 14);
+            break;
+        }
+
+        int32_t prog_size = 0;
+        for (int i = 0; i < 4; i++) {
+            prog_size = (prog_size << 8) | data[offset++];
+        }
+
+        if (prog_size == 0) {
+            kprint("Zero-sized program encountered\n", 14);
+            break;
+        }
+
+        if (prog_size > initramfs_size - offset) {
+            kprint("Program size exceeds available data\n", 14);
+            break;
+        }
+
+        programs[program_count].data = (const char*)&data[offset];
+        programs[program_count].size = prog_size;
+        programs[program_count].ramfs_sector = -1;
+
+        int sector = ramfs_write((const char*)&data[offset], prog_size);
+        if (sector >= 0) {
+            programs[program_count].ramfs_sector = sector;
+
+            kprint(":: Loaded program ", 7);
+
+            char buf[16];
+            memset(buf, 0, sizeof(buf));
+            size_t n = program_count;
+            char* p = buf;
+            if (n == 0) {
+                *p++ = '0';
+            } else {
+                char* start = p;
+                while (n > 0) {
+                    *p++ = '0' + n % 10;
+                    n /= 10;
+                }
+                p--;
+                while (start < p) {
+                    char temp = *start;
+                    *start = *p;
+                    *p = temp;
+                    start++;
+                    p--;
+                }
+                p = buf + 15;
+            }
+            *p = '\0';
+            kprint(buf, 7);
+
+            kprint(" (size=", 7);
+
+            memset(buf, 0, sizeof(buf));
+            n = prog_size;
+            p = buf;
+            if (n == 0) {
+                *p++ = '0';
+            } else {
+                char* start = p;
+                while (n > 0) {
+                    *p++ = '0' + n % 10;
+                    n /= 10;
+                }
+                p--;
+                while (start < p) {
+                    char temp = *start;
+                    *start = *p;
+                    *p = temp;
+                    start++;
+                    p--;
+                }
+                p = buf + 15;
+            }
+            *p = '\0';
+            kprint(buf, 7);
+            kprint(", sector=", 7);
+
+            memset(buf, 0, sizeof(buf));
+            n = sector;
+            p = buf;
+            if (n == 0) {
+                *p++ = '0';
+            } else {
+                char* start = p;
+                while (n > 0) {
+                    *p++ = '0' + n % 10;
+                    n /= 10;
+                }
+                p--;
+                while (start < p) {
+                    char temp = *start;
+                    *start = *p;
+                    *p = temp;
+                    start++;
+                    p--;
+                }
+                p = buf + 15;
+            }
+            *p = '\0';
+            kprint(buf, 7);
+            kprint(")\n", 7);
+        } else {
+            kprint("Failed to load program to RamFS\n", 14);
+        }
+
+        program_count++;
+        offset += prog_size;
+
+        if (offset % 4 != 0) {
+            offset += 4 - (offset % 4);
+        }
+    }
+
+    kprint(":: Total programs loaded: ", 7);
+    char count_buf[16];
+    memset(count_buf, 0, sizeof(count_buf));
+    size_t n = program_count;
+    char* p = count_buf;
+    if (n == 0) {
+        *p++ = '0';
+    } else {
+        char* start = p;
+        while (n > 0) {
+            *p++ = '0' + n % 10;
+            n /= 10;
+        }
+        p--;
+        while (start < p) {
+            char temp = *start;
+            *start = *p;
+            *p = temp;
+            start++;
+            p--;
+        }
+        p = count_buf + 15;
+    }
+    *p = '\0';
+    kprint(count_buf, 7);
+    kprint("\n", 7);
 }
 
 void initramfs_load_limine(volatile struct limine_module_request* module_request) {
@@ -172,6 +334,33 @@ void initramfs_load_limine(volatile struct limine_module_request* module_request
     memset(count_buf, 0, sizeof(count_buf));
     size_t n = program_count;
     char* p = count_buf;
+    if (n == 0) {
+        *p++ = '0';
+    } else {
+        char* start = p;
+        while (n > 0) {
+            *p++ = '0' + n % 10;
+            n /= 10;
+        }
+        p--;
+        while (start < p) {
+            char temp = *start;
+            *start = *p;
+            *p = temp;
+            start++;
+            p--;
+        }
+        p = count_buf + 15;
+    }
+    *p = '\0';
+    kprint(count_buf, 7);
+    kprint("\n", 7);
+
+    // Debug: ensure program_count is set
+    kprint(":: Debug: program_count set to ", 7);
+    memset(count_buf, 0, sizeof(count_buf));
+    n = program_count;
+    p = count_buf;
     if (n == 0) {
         *p++ = '0';
     } else {

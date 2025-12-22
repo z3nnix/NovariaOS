@@ -8,7 +8,7 @@
 #define MAX_FILES 256
 #define MAX_HANDLES 64
 #define MAX_FILENAME 256
-#define MAX_FILE_SIZE 4096
+#define MAX_FILE_SIZE 65536
 
 #define VFS_READ   0x01
 #define VFS_WRITE  0x02
@@ -62,7 +62,7 @@ struct vfs_file_t {
     size_t size;
     vfs_file_type_t type;
     char data[MAX_FILE_SIZE];
-    
+
     vfs_device_ops_t ops;
     void* dev_data;
 };

@@ -2,6 +2,7 @@
 
 #include <core/fs/vfs.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb_render.h>
 
 int rm_main(int argc, char** argv) {
     if (argc < 2) {

@@ -2,6 +2,7 @@
 
 #include <core/kernel/mem.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb_render.h>
 #include <lib/bootloader/limine.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -2,6 +2,7 @@
 
 #include <core/fs/vfs.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb_render.h>
 
 // Helper function to get string length
 static int write_strlen(const char* str) {

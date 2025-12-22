@@ -2,6 +2,7 @@
 
 #include <core/kernel/userspace.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/vge/fb_render.h>
 #include <stddef.h>
 
 #define MAX_PROGRAMS 32

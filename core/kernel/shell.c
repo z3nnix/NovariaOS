@@ -3,10 +3,11 @@
 #include <core/kernel/shell.h>
 #include <core/kernel/kstd.h>
 #include <core/drivers/keyboard.h>
-#include <core/drivers/fb.h>
+#include <core/kernel/vge/fb.h>
 #include <core/kernel/mem.h>
 #include <core/fs/initramfs.h>
 #include <core/fs/iso9660.h>
+#include <core/fs/vfs.h>
 #include <core/kernel/nvm/nvm.h>
 #include <core/kernel/nvm/caps.h>
 #include <core/kernel/userspace.h>
@@ -24,23 +25,6 @@ static int strcmp(const char* str1, const char* str2) {
     return *(unsigned char*)str1 - *(unsigned char*)str2;
 }
 
-static int strncmp(const char* str1, const char* str2, int n) {
-    while (n > 0 && *str1 && (*str1 == *str2)) {
-        str1++;
-        str2++;
-        n--;
-    }
-    if (n == 0) return 0;
-    return *(unsigned char*)str1 - *(unsigned char*)str2;
-}
-
-static int strlen(const char* str) {
-    int len = 0;
-    while (str[len] != '\0') {
-        len++;
-    }
-    return len;
-}
 
 static void cmd_help(void) {
     kprint("\nBuilt-in commands:\n", 10);
@@ -49,6 +33,8 @@ static void cmd_help(void) {
     kprint("  list     - List loaded NVM programs\n", 7);
     kprint("  progs    - List userspace programs\n", 7);
     kprint("  pwd      - Print working directory\n", 7);
+    kprint("  ls       - List directory contents\n", 7);
+    kprint("  cat      - Display file contents\n", 7);
     kprint("\nISO9660 commands:\n", 10);
     kprint("  isols    - List files in ISO9660 directory\n", 7);
     kprint("  isocat   - Show ISO9660 file content\n", 7);
@@ -67,7 +53,7 @@ static void cmd_memtest(void) {
     if (ptr1) {
         kprint("Allocated 128 bytes at ", 7);
         char buf[32];
-        itoa((int)ptr1, buf, 16);
+        itoa((uintptr_t)ptr1, buf, 16);
         kprint(buf, 7);
         kprint("\n", 7);
         freeMemory(ptr1);
@@ -126,30 +112,149 @@ static void cmd_isols(const char* args) {
     kprint("\n", 7);
 }
 
+static void cmd_cat(const char* args) {
+    const char* path = args;
+    while (*path == ' ') path++;
+
+    if (*path == '\0') {
+        kprint("\nUsage: cat <filename>\n\n", 12);
+        return;
+    }
+
+    size_t size;
+    const char* data = vfs_read(path, &size);
+
+    if (data == NULL) {
+        kprint("\nError: File '", 12);
+        kprint(path, 12);
+        kprint("' not found\n", 12);
+        return;
+    }
+
+    kprint("\n", 7);
+    for (size_t i = 0; i < size; i++) {
+        char c[2] = {data[i], '\0'};
+        if (data[i] == '\n') {
+            kprint("\n", 7);
+        } else {
+            kprint(c, 15);
+        }
+    }
+    kprint("\n", 7);
+}
+
+static void cmd_ls(const char* args) {
+    const char* path = args;
+    while (*path == ' ') path++;
+
+    if (*path == '\0') {
+        path = current_working_directory;
+    }
+
+    vfs_file_t* files = vfs_get_files();
+    int dir_len = strlen(path);
+
+    char normalized_dir[64];
+    size_t i = 0;
+    while (path[i] && i < 63) {
+        normalized_dir[i] = path[i];
+        i++;
+    }
+    normalized_dir[i] = '\0';
+
+    if (dir_len > 1 && normalized_dir[dir_len - 1] == '/') {
+        normalized_dir[dir_len - 1] = '\0';
+        dir_len--;
+    }
+
+    int found_count = 0;
+    kprint("\n", 7);
+
+    for (size_t i = 0; i < 128; i++) {
+        if (!files[i].used) continue;
+
+        const char* name = files[i].name;
+        bool should_show = false;
+        const char* display_name = name;
+
+        if (dir_len == 1 && normalized_dir[0] == '/') {
+            if (name[0] == '/' && name[1] != '\0') {
+                int slash_count = 0;
+                for (int j = 1; name[j] != '\0'; j++) {
+                    if (name[j] == '/') slash_count++;
+                }
+                if (slash_count == 0) {
+                    should_show = true;
+                    display_name = name + 1;
+                }
+            }
+        } else {
+            size_t name_len = strlen(name);
+
+            if (name_len > dir_len && name[dir_len] == '/') {
+                bool match = true;
+                for (size_t j = 0; j < dir_len; j++) {
+                    if (name[j] != normalized_dir[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    size_t slash_count = 0;
+                    for (size_t j = dir_len + 1; name[j] != '\0'; j++) {
+                        if (name[j] == '/') slash_count++;
+                    }
+                    if (slash_count == 0) {
+                        should_show = true;
+                        display_name = name + dir_len + 1;
+                    }
+                }
+            }
+        }
+
+        if (should_show) {
+            found_count++;
+            if (files[i].type == VFS_TYPE_DIR) {
+                kprint(display_name, 9);
+                kprint("/", 9);
+            } else {
+                kprint(display_name, 7);
+            }
+            kprint("    ", 7);
+        }
+    }
+
+    if (found_count == 0) {
+        kprint("(empty)", 7);
+    }
+
+    kprint("\n\n", 7);
+}
+
 static void cmd_isocat(const char* args) {
     if (!iso9660_is_initialized()) {
         kprint("\nISO9660 filesystem is not initialized\n\n", 14);
         return;
     }
-    
+
     const char* path = args;
     while (*path == ' ') path++;
-    
+
     if (*path == '\0') {
         kprint("\nUsage: isocat <path>\n\n", 12);
         return;
     }
-    
+
     size_t size;
     const void* data = iso9660_find_file(path, &size);
-    
+
     if (!data) {
         kprint("\nFile not found: ", 14);
         kprint(path, 14);
         kprint("\n\n", 14);
         return;
     }
-    
+
     kprint("\n", 7);
     kprint("File: ", 7);
     kprint(path, 11);
@@ -159,14 +264,14 @@ static void cmd_isocat(const char* args) {
     kprint(buf, 7);
     kprint(" bytes)\n", 7);
     kprint("Content:\n", 7);
-    
+
     size_t print_size = size > 1024 ? 1024 : size;
     const char* text = (const char*)data;
     for (size_t i = 0; i < print_size; i++) {
         char c[2];
         c[0] = text[i];
         c[1] = '\0';
-        
+
         if (text[i] >= 32 && text[i] < 127) {
             kprint(c, 7);
         } else if (text[i] == '\n') {
@@ -177,11 +282,11 @@ static void cmd_isocat(const char* args) {
             kprint(".", 7);
         }
     }
-    
+
     if (size > 1024) {
         kprint("\n... (truncated, showing first 1024 bytes)\n", 7);
     }
-    
+
     kprint("\n\n", 7);
 }
 
@@ -241,6 +346,18 @@ static void execute_command(const char* command) {
     } else if (strcmp(argv[0], "pwd") == 0) {
         kprint(current_working_directory, 11);
         kprint("\n", 7);
+    } else if (strcmp(argv[0], "ls") == 0) {
+        if (argc > 1) {
+            cmd_ls(argv[1]);
+        } else {
+            cmd_ls("");
+        }
+    } else if (strcmp(argv[0], "cat") == 0) {
+        if (argc > 1) {
+            cmd_cat(argv[1]);
+        } else {
+            kprint("\nUsage: cat <filename>\n\n", 12);
+        }
     } else if (strcmp(argv[0], "isols") == 0) {
         if (argc > 1) {
             cmd_isols(argv[1]);
@@ -263,7 +380,7 @@ static void execute_command(const char* command) {
         bin_path[3] = 'n';
         bin_path[4] = '/';
         
-        for (int i = 0; i < len && i < 58; i++) {
+        for (size_t i = 0; i < len && i < 58; i++) {
             bin_path[5 + i] = argv[0][i];
         }
         
@@ -306,7 +423,7 @@ const char* shell_get_cwd(void) {
 }
 
 void shell_set_cwd(const char* path) {
-    int i = 0;
+    size_t i = 0;
     while (path[i] != '\0' && i < MAX_PATH_LENGTH - 1) {
         current_working_directory[i] = path[i];
         i++;
