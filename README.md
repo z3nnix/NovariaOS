@@ -6,7 +6,7 @@
     <a href="https://t.me/NovariaOS"><img src="https://img.shields.io/badge/Telegram-0088CC"></a>
 </div>
 
-> NovariaOS is an experimental operating system whose architecture challenges traditional approaches. It is built on the concept of an microkernel.
+> NovariaOS is an experimental operating system whose architecture challenges traditional approaches.
 
 ## Features
 

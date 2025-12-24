@@ -16,7 +16,7 @@ targets:
     deps: [iso]
 
   kernel.bin:
-    deps: [kasm.o, pause.o, kc.o, caps.o, kstd.o, mem.o, fb.o, fb_render.o, serial.o, keyboard.o, ramfs.o, initramfs.o, vfs.o, iso9660.o, entropy.o, chacha20.o, chacha20_rng.o, cdrom.o, nvm.o, syscalls.o, shell.o, psf.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_rm.o, us_write.o, us_nova.o, us_uname.o]
+    deps: [kasm.o, kc.o, caps.o, kstd.o, mem.o, fb.o, fb_render.o, serial.o, keyboard.o, ramfs.o, initramfs.o, vfs.o, iso9660.o, entropy.o, chacha20.o, chacha20_rng.o, cdrom.o, nvm.o, syscalls.o, shell.o, psf.o, userspace.o, userspace_init.o, us_echo.o, us_clear.o, us_rm.o, us_write.o, us_nova.o, us_uname.o]
     cmds:
       - "${LD} ${LDFLAGS} -o ${@} ${^}"
       - "mkdir -p ${BUILD_DIR}"
@@ -28,11 +28,6 @@ targets:
     deps: []
     cmds:
       - "${ASM} ${ASMFLAGS} core/arch/boot.asm -o ${@}"
-
-  pause.o:
-    deps: []
-    cmds:
-      - "${CC} ${CFLAGS} core/arch/pause.c -o ${@}"
 
   kc.o:
     deps: []
