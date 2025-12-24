@@ -1,9 +1,6 @@
-#ifndef MULTIBOOT_H
-#define MULTIBOOT_H
+#ifndef PAUSE_H
+#define PAUSE_H
 
-#include <stdint.h>
+#define cpu_relax() asm volatile("pause" ::: "memory")
 
-extern void pause();
-extern int16_t inw(int16_t port);
-
-#endif
+#endif // PAUSE_H

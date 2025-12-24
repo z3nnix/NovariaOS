@@ -116,19 +116,7 @@ void kmain() {
         // Debug: check if font file was mounted
         LOG_DEBUG("Checking mounted files...\n");
         vfs_list();
-
-        // Check specific files
-        bool usr_exists = vfs_exists("/usr");
-        bool lib_exists = vfs_exists("/usr/lib");
-        bool fonts_exists = vfs_exists("/usr/lib/fonts");
-        bool font_file_exists = vfs_exists("/usr/lib/fonts/UniCyrX-ibm-8x16.psf");
-
-        LOG_DEBUG("Directory checks:\n");
-        LOG_DEBUG("  /usr exists: %s\n", usr_exists ? "YES" : "NO");
-        LOG_DEBUG("  /usr/lib exists: %s\n", lib_exists ? "YES" : "NO");
-        LOG_DEBUG("  /usr/lib/fonts exists: %s\n", fonts_exists ? "YES" : "NO");
-        LOG_DEBUG("  Font file exists: %s\n", font_file_exists ? "YES" : "NO");
-
+ 
         init_vge_font();
         clear_screen();
     } else {

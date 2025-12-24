@@ -53,7 +53,7 @@ static void cmd_memtest(void) {
     if (ptr1) {
         kprint("Allocated 128 bytes at ", 7);
         char buf[32];
-        itoa((uintptr_t)ptr1, buf, 16);
+        itoa((unsigned int)(unsigned long)ptr1, buf, 16);
         kprint(buf, 7);
         kprint("\n", 7);
         freeMemory(ptr1);

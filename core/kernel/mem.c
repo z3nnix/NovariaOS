@@ -4,6 +4,7 @@
 #include <core/kernel/kstd.h>
 #include <core/kernel/vge/fb_render.h>
 #include <lib/bootloader/limine.h>
+#include <core/arch/panic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdalign.h>
@@ -24,7 +25,6 @@ typedef struct MemoryBlock {
     int32_t magic;
     size_t size;
     struct MemoryBlock* next;
-    int32_t checksum;
 } MemoryBlock;
 
 #define MAGIC_ALLOC      0xABCD1234
@@ -37,10 +37,8 @@ static void* poolStart = NULL;
 static size_t poolSizeTotal = 0;
 static uint64_t hhdmOffset = 0;
 
-static void panic(const char* message);
 static void mergeFreeBlocks();
 static bool validateBlock(MemoryBlock* block);
-static int32_t calculateChecksum(MemoryBlock* block);
 static void* physicalToVirtual(uint64_t physical);
 static uint64_t virtualToPhysical(void* virtual);
 
@@ -131,7 +129,6 @@ void initializeMemoryManager(void) {
     freeList->magic = MAGIC_FREE;
     freeList->size = poolSizeTotal - sizeof(MemoryBlock);
     freeList->next = NULL;
-    freeList->checksum = calculateChecksum(freeList);
 
     char buffer[64];
     formatMemorySize(freeList->size, buffer);
@@ -164,7 +161,6 @@ void* allocateMemory(size_t size) {
                 newBlock->magic = MAGIC_FREE;
                 newBlock->size = curr->size - size - sizeof(MemoryBlock);
                 newBlock->next = curr->next;
-                newBlock->checksum = calculateChecksum(newBlock);
                 
                 curr->size = size;
                 curr->next = newBlock;
@@ -172,9 +168,8 @@ void* allocateMemory(size_t size) {
 
             if (prev) prev->next = curr->next;
             else freeList = curr->next;
-            
+
             curr->magic = MAGIC_ALLOC;
-            curr->checksum = calculateChecksum(curr);
             return (void*)((char*)curr + sizeof(MemoryBlock));
         }
         
@@ -187,11 +182,11 @@ void* allocateMemory(size_t size) {
 void freeMemory(void* ptr) {
     if (ptr == NULL) return;
 
-    MemoryBlock* block = (MemoryBlock*)((uintptr_t)ptr - sizeof(MemoryBlock));
+    MemoryBlock* block = (MemoryBlock*)((unsigned long)ptr - sizeof(MemoryBlock));
 
     // Check if block is within our pool boundaries
-    if ((uintptr_t)block < (uintptr_t)poolStart ||
-        (uintptr_t)block + block->size + sizeof(MemoryBlock) > (uintptr_t)poolStart + poolSizeTotal) {
+    if ((unsigned long)block < (unsigned long)poolStart ||
+        (unsigned long)block + block->size + sizeof(MemoryBlock) > (unsigned long)poolStart + poolSizeTotal) {
         panic("Invalid memory address in free");
     }
 
@@ -200,16 +195,17 @@ void freeMemory(void* ptr) {
     }
 
     // Check for double free
-    for (MemoryBlock* curr = freeList; curr; curr = curr->next) {
-        if (curr == block) {
+    MemoryBlock* check = freeList;
+    while (check) {
+        if (check == block) {
             panic("Double free detected");
             return;
         }
+        check = check->next;
     }
 
     block->magic = MAGIC_FREE;
     block->next = freeList;
-    block->checksum = calculateChecksum(block);
     freeList = block;
 
     mergeFreeBlocks();
@@ -226,7 +222,6 @@ static void mergeFreeBlocks() {
         if ((char*)curr + sizeof(MemoryBlock) + curr->size == (char*)next) {
             curr->size += sizeof(MemoryBlock) + next->size;
             curr->next = next->next;
-            curr->checksum = calculateChecksum(curr);
         } else {
             curr = curr->next;
         }
@@ -237,26 +232,14 @@ static bool validateBlock(MemoryBlock* block) {
     if (block == NULL) return false;
 
     // Check if block is within our pool boundaries
-    if ((uintptr_t)block < (uintptr_t)poolStart ||
-        (uintptr_t)block + sizeof(MemoryBlock) > (uintptr_t)poolStart + poolSizeTotal) {
+    if ((unsigned long)block < (unsigned long)poolStart ||
+        (unsigned long)block + sizeof(MemoryBlock) > (unsigned long)poolStart + poolSizeTotal) {
         return false;
     }
 
-    if (block->magic != MAGIC_ALLOC && block->magic != MAGIC_FREE) {
-        return false;
-    }
-
-    return block->checksum == calculateChecksum(block);
+    return block->magic == MAGIC_ALLOC || block->magic == MAGIC_FREE;
 }
 
-static int32_t calculateChecksum(MemoryBlock* block) {
-    int32_t sum = 0;
-    int8_t* bytes = (int8_t*)block;
-    for (size_t i = 0; i < sizeof(MemoryBlock) - sizeof(int32_t); i++) {
-        sum = (sum << 3) ^ bytes[i];
-    }
-    return sum;
-}
 
 static void* physicalToVirtual(uint64_t physical) {
     return (void*)(physical + hhdmOffset);
@@ -264,14 +247,6 @@ static void* physicalToVirtual(uint64_t physical) {
 
 static uint64_t virtualToPhysical(void* virtual) {
     return (uint64_t)virtual - hhdmOffset;
-}
-
-static void panic(const char* message) {
-    kprint("KERNEL PANIC: ", 4);
-    kprint(message, 4);
-    kprint("\n", 4);
-
-    pause();
 }
 
 void mm_test() {

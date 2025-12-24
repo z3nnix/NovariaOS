@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include <core/arch/pause.h>
 #include <stdint.h>
 
 static int has_rdrand(void) {
@@ -44,7 +45,7 @@ uint64_t get_hw_entropy(void) {
                 }
             }
 
-            asm volatile("pause");
+            cpu_relax();
         }
     }
     

@@ -7,8 +7,8 @@
 #define MAX_PROCESSES 32768
 #define TIME_SLICE_MS 2
 #define MAX_CAPS 16
-#define STACK_SIZE 256
-#define MAX_LOCALS 256
+#define STACK_SIZE 512
+#define MAX_LOCALS 512
 
 // NVM process structure
 typedef struct {
