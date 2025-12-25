@@ -126,37 +126,37 @@ targets:
   userspace_init.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/userspace_init.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/userspace_init.c -o ${@}"
 
   us_echo.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/echo.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/echo.c -o ${@}"
 
   us_clear.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/clear.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/clear.c -o ${@}"
 
   us_rm.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/rm.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/rm.c -o ${@}"
 
   us_write.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/write.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/write.c -o ${@}"
 
   us_nova.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/nova.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/nova.c -o ${@}"
 
   us_uname.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} usr/bin/uname.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/bin/uname.c -o ${@}"
 
   chacha20.o:
     deps: []
@@ -181,7 +181,7 @@ targets:
   iso:
     deps: [kernel.bin]
     cmds:
-      - "xorriso -as mkisofs -quiet -iso-level 3 -o ${BUILD_DIR}/boot/data.iso usr/"
+      - "xorriso -as mkisofs -quiet -iso-level 3 -o ${BUILD_DIR}/boot/rootfs.img rootfs/"
       - "xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --protective-msdos-label -iso-level 3 -partition_offset 64 -quiet -o build_${DATE}.iso ${BUILD_DIR}/boot/"
       - "limine bios-install build_${DATE}.iso"
 

@@ -1,6 +1,6 @@
 .NVM0
 ; Copy /test.txt to /second.txt
-; NOTE: create usr/test.txt and usr/second.txt files
+; NOTE: create rootfs/test.txt and rootfs/second.txt files
 
 ; Open /test.txt
 push 0
