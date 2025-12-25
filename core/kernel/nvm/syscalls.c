@@ -8,26 +8,25 @@
 #include <core/kernel/log.h>
 #include <core/kernel/mem.h>
 #include <core/fs/vfs.h>
-#include <core/kernel/vge/fb_render.h>
 
 extern uint8_t inb(uint16_t port);
 extern void outb(uint16_t port, uint8_t val);
 
-int16_t recipient;
-int16_t port;
-int8_t value;
+uint16_t recipient;
+uint16_t port;
+uint8_t value;
 
 typedef struct {
-    int16_t recipient;
-    int16_t sender;
-    int8_t content;
+    uint16_t recipient;
+    uint16_t sender;
+    uint8_t content;
 } message_t;
 
 #define MAX_MESSAGES 32
 static message_t message_queue[MAX_MESSAGES];
 static int message_count = 0;
 
-int32_t syscall_handler(int8_t syscall_id, nvm_process_t* proc) {
+int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
     int32_t result = 0;
     char buffer[32];
     

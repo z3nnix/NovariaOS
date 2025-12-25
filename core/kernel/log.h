@@ -5,6 +5,7 @@
 #include <core/kernel/kstd.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <core/fs/vfs.h>
 
 #define LOG_LEVEL_FATAL   0
@@ -35,7 +36,7 @@ static inline void syslog_print(const char* message) {
     vfs_create("/var/log/system.log", log_buffer, log_size);
 }
 
-static inline char* utoa_hex(unsigned int num, char* str) {
+static inline char* utoa_hex(uintptr_t num, char* str) {
     int i = 0;
     
     if (num == 0) {
@@ -129,8 +130,8 @@ static inline void log_format_basic(const char* level, const char* format, ...) 
             void* ptr = va_arg(args, void*);
             buffer[buf_pos++] = '0';
             buffer[buf_pos++] = 'x';
-            
-            unsigned int addr = (unsigned int)ptr;
+
+            uintptr_t addr = (uintptr_t)ptr;
             utoa_hex(addr, temp_buf);
             
             int len = 0;
