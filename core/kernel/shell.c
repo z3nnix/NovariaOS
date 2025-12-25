@@ -131,7 +131,6 @@ static void cmd_cat(const char* args) {
         return;
     }
 
-    kprint("\n", 7);
     for (size_t i = 0; i < size; i++) {
         char c[2] = {data[i], '\0'};
         if (data[i] == '\n') {
@@ -223,11 +222,6 @@ static void cmd_ls(const char* args) {
             kprint("    ", 7);
         }
     }
-
-    if (found_count == 0) {
-        kprint("(empty)", 7);
-    }
-
     kprint("\n\n", 7);
 }
 
@@ -397,7 +391,7 @@ static void execute_command(const char* command) {
             if (data && size > 0) {
                 should_delay_prompt = 1;
                 delay_ticks = 20;
-                nvm_execute((int8_t*)data, size, (int16_t[]){CAP_ALL}, 1);
+                nvm_execute((uint8_t*)data, size, (uint16_t[]){CAP_ALL}, 1);
                 return;
             } else {
                 kprint("Error: Failed to read program file\n", 12);
