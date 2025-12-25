@@ -2,6 +2,7 @@
 
 #include <core/kernel/mem.h>
 #include <core/kernel/kstd.h>
+#include <core/kernel/log.h>
 #include <core/kernel/vge/fb_render.h>
 #include <lib/bootloader/limine.h>
 #include <core/arch/panic.h>
@@ -132,10 +133,7 @@ void initializeMemoryManager(void) {
 
     char buffer[64];
     formatMemorySize(freeList->size, buffer);
-    kprint(":: Memory initialized (", 7);
-    kprint(buffer, 7);
-    kprint(")", 7);
-    kprint("\n", 7);
+    LOG_INFO("Memory initialized (%s)\n", buffer);
 }
 
 void* allocateMemory(size_t size) {
