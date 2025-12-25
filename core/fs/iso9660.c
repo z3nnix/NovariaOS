@@ -45,6 +45,11 @@ static void normalize_filename(const char* iso_name, size_t iso_len, char* out, 
         out[i] = iso_name[i];
     }
     out[i] = '\0';
+    
+    size_t len = i;
+    if (len > 0 && out[len - 1] == '.') {
+        out[len - 1] = '\0';
+    }
 }
 
 static void to_lowercase(char* str) {
