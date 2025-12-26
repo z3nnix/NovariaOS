@@ -4,7 +4,7 @@ variables:
   LD: ld
   GRUB_MKRESCUE: grub-mkrescue
   QEMU: qemu-system-x86_64
-  CFLAGS: -I./. -fno-stack-protector -m64 -mcmodel=large -nostdlib -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -c
+  CFLAGS: -I./include/ -I./ -fno-stack-protector -m64 -mcmodel=large -nostdlib -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -c
   ASMFLAGS: -f elf64
   LDFLAGS: -nostdlib -m elf_x86_64 -T link.ld -z noexecstack
   BUILD_DIR: build
