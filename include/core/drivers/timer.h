@@ -1,9 +1,14 @@
-#pragma once
+#ifndef TIMER_H
+#define TIMER_H
 
 #include <stdint.h>
-#include <core/kernel/kstd.h>
 
-void pit_init();
-extern void outb(uint16_t port, uint8_t val);
-extern void nvm_scheduler_tick();
-extern void pit_polling_loop();
+extern uint64_t uptime_seconds;
+extern uint32_t tick_counter;
+
+uint64_t get_uptime(void);
+void pit_init(void);
+void pit_handler(void);
+void pit_poll(void);
+
+#endif

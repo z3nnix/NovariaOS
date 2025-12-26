@@ -247,6 +247,26 @@ static uint64_t virtualToPhysical(void* virtual) {
     return (uint64_t)virtual - hhdmOffset;
 }
 
+size_t getMemTotal() {
+    return poolSizeTotal;
+}
+
+size_t getMemFree() {
+    size_t freeSize = 0;
+    MemoryBlock* curr = freeList;
+    while (curr != NULL) {
+        if (validateBlock(curr) && curr->magic == MAGIC_FREE) {
+            freeSize += curr->size;
+        }
+        curr = curr->next;
+    }
+    return freeSize;
+}
+
+size_t getMemAvailable() {
+    return getMemFree();
+}
+
 void mm_test() {
     kprint(":: Starting memory test...\n\n", 7);
 

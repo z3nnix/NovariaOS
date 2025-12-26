@@ -78,7 +78,7 @@ typedef struct {
 void vfs_init(void);
 int vfs_mkdir(const char* dirname);
 int vfs_create(const char* filename, const char* data, size_t size);
-int vfs_mkdev(const char* filename, vfs_dev_read_t read_fn, vfs_dev_write_t write_fn,
+int vfs_pseudo_register(const char* filename, vfs_dev_read_t read_fn, vfs_dev_write_t write_fn,
               vfs_dev_seek_t seek_fn, vfs_dev_ioctl_t ioctl_fn, void* dev_data);
 const char* vfs_read(const char* filename, size_t* size);
 int vfs_open(const char* filename, int flags);

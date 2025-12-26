@@ -3,6 +3,7 @@
     #include <core/crypto/chacha20_rng.h>
     #include <core/arch/entropy.h>
     #include <core/kernel/log.h>
+    #include <core/fs/procfs.h>
     #include <core/fs/vfs.h>
     #include <string.h>
     #include <stdlib.h>
@@ -60,7 +61,7 @@
         return NULL;
     }
 
-    static int vfs_mkdev_with_fd(const char* filename, int fixed_fd,
+    static int vfs_pseudo_register_with_fd(const char* filename, int fixed_fd,
                                 vfs_dev_read_t read_fn,
                                 vfs_dev_write_t write_fn,
                                 vfs_dev_seek_t seek_fn,
@@ -88,7 +89,7 @@
         }
         
         if (file_idx == -1) {
-            file_idx = vfs_mkdev(filename, read_fn, write_fn, seek_fn, ioctl_fn, dev_data);
+            file_idx = vfs_pseudo_register(filename, read_fn, write_fn, seek_fn, ioctl_fn, dev_data);
             if (file_idx < 0) return file_idx;
             file = &files[file_idx];
         }
@@ -294,18 +295,20 @@
         vfs_mkdir("/var/cache");
         vfs_mkdir("/dev");
 
-        vfs_mkdev_with_fd("/dev/null", DEV_NULL_FD, dev_null_read, dev_null_write, dev_null_seek, NULL, NULL);
-        vfs_mkdev_with_fd("/dev/zero", DEV_ZERO_FD, dev_zero_read, dev_zero_write, NULL, NULL, NULL);
-        vfs_mkdev_with_fd("/dev/full", DEV_FULL_FD, dev_full_read, dev_full_write, NULL, NULL, NULL);
-        vfs_mkdev("/dev/random", dev_random_read, dev_random_write, NULL, NULL, NULL);
+        vfs_pseudo_register_with_fd("/dev/null", DEV_NULL_FD, dev_null_read, dev_null_write, dev_null_seek, NULL, NULL);
+        vfs_pseudo_register_with_fd("/dev/zero", DEV_ZERO_FD, dev_zero_read, dev_zero_write, NULL, NULL, NULL);
+        vfs_pseudo_register_with_fd("/dev/full", DEV_FULL_FD, dev_full_read, dev_full_write, NULL, NULL, NULL);
+        vfs_pseudo_register("/dev/random", dev_random_read, dev_random_write, NULL, NULL, NULL);
         
-        vfs_mkdev_with_fd("/dev/stdin", DEV_STDIN_FD, NULL, NULL, NULL, NULL, NULL);
-        vfs_mkdev_with_fd("/dev/stdout", DEV_STDOUT_FD, NULL, NULL, NULL, NULL, NULL);
-        vfs_mkdev_with_fd("/dev/stderr", DEV_STDERR_FD, NULL, NULL, NULL, NULL, NULL);
+        vfs_pseudo_register_with_fd("/dev/stdin", DEV_STDIN_FD, NULL, NULL, NULL, NULL, NULL);
+        vfs_pseudo_register_with_fd("/dev/stdout", DEV_STDOUT_FD, NULL, NULL, NULL, NULL, NULL);
+        vfs_pseudo_register_with_fd("/dev/stderr", DEV_STDERR_FD, NULL, NULL, NULL, NULL, NULL);
         
         vfs_link_std_fd(0, "/dev/stdin");
         vfs_link_std_fd(1, "/dev/stdout");
         vfs_link_std_fd(2, "/dev/stderr");
+
+        procfs_init();
     }
 
     int vfs_mkdir(const char* dirname) {
@@ -369,7 +372,7 @@
         return -3;
     }
 
-    int vfs_mkdev(const char* filename, 
+    int vfs_pseudo_register(const char* filename, 
                 vfs_dev_read_t read_fn, 
                 vfs_dev_write_t write_fn,
                 vfs_dev_seek_t seek_fn,

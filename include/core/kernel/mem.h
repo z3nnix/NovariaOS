@@ -12,6 +12,9 @@ extern void* memset(void* s, int c, size_t n);
 extern void* allocateMemory(size_t size);
 extern void freeMemory(void* ptr);
 extern void mm_test();
+extern size_t getMemTotal(void);
+extern size_t getMemFree(void);
+extern size_t getMemAvailable(void);
 
 // Aliases for convenience
 #define kmalloc allocateMemory
