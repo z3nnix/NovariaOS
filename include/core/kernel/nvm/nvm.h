@@ -37,6 +37,8 @@ extern uint32_t timer_ticks;
 
 void nvm_init();
 void nvm_execute(uint8_t* bytecode, uint32_t size, uint16_t* capabilities, uint8_t caps_count);
+int nvm_create_process(uint8_t* bytecode, uint32_t size, uint16_t initial_caps[], uint8_t caps_count);
+int nvm_create_process_with_stack(uint8_t* bytecode, uint32_t size,  uint16_t initial_caps[], uint8_t caps_count,  int32_t* initial_stack_values, uint16_t stack_count);
 void nvm_scheduler_tick();
 bool nvm_is_process_active(uint8_t pid);
 int32_t nvm_get_exit_code(uint8_t pid);

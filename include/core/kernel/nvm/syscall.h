@@ -3,9 +3,8 @@
 
 #include <stdint.h>
 
-// Syscalls definitions
 #define SYS_EXIT            0x00
-#define SYS_EXEC            0x01
+#define SYS_SPAWN           0x01
 #define SYS_OPEN            0x02
 #define SYS_READ            0x03
 #define SYS_WRITE           0x04

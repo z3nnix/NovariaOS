@@ -1,13 +1,12 @@
-#ifndef CAPS_H 
-#define CAPS_h
+#ifndef CAPS_H
+#define CAPS_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
-// CAPS definitions
 #define CAPS_NONE             0x0000
 #define CAP_FS_READ           0x0001
-#define CAP_FS_WRITE          0X0002
+#define CAP_FS_WRITE          0x0002
 #define CAP_FS_CREATE         0x0003
 #define CAP_FS_DELETE         0x0004
 #define CAP_MEM_MGMT          0x0005
@@ -20,7 +19,6 @@
 #define CAP_DRV_GROUP_NETWORK 0x0400
 #define CAP_ALL               0xFFFF
 
-// CAPS management functions
 bool caps_has_capability(nvm_process_t* proc, int16_t cap);
 bool caps_add_capability(nvm_process_t* proc, int16_t cap);
 bool caps_remove_capability(nvm_process_t* proc, int16_t cap);

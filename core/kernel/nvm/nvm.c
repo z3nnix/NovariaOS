@@ -27,12 +27,12 @@ void nvm_init() {
 
 // Signature checking and process creation
 int nvm_create_process(uint8_t* bytecode, uint32_t size, uint16_t initial_caps[], uint8_t caps_count) {
-    if(bytecode[0] != 0x4E || bytecode[1] != 0x56 || 
+    if(bytecode[0] != 0x4E || bytecode[1] != 0x56 ||
        bytecode[2] != 0x4D || bytecode[3] != 0x30) {
         LOG_WARN("Invalid NVM signature\n");
         return -1;
     }
-    
+
     for(int i = 0; i < MAX_PROCESSES; i++) {
         if(!processes[i].active) {
             processes[i].bytecode = bytecode;
@@ -49,7 +49,7 @@ int nvm_create_process(uint8_t* bytecode, uint32_t size, uint16_t initial_caps[]
                 processes[i].capabilities[j] = initial_caps[j];
             }
             processes[i].caps_count = caps_count;
-            
+
             for(int j = 0; j < MAX_LOCALS; j++) {
                 processes[i].locals[j] = 0;
             }
@@ -57,7 +57,59 @@ int nvm_create_process(uint8_t* bytecode, uint32_t size, uint16_t initial_caps[]
             return i;
         }
     }
-    
+
+    LOG_WARN("No free process slots\n");
+    return -1;
+}
+
+int nvm_create_process_with_stack(uint8_t* bytecode, uint32_t size,
+                                  uint16_t initial_caps[], uint8_t caps_count,
+                                  int32_t* initial_stack_values, uint16_t stack_count) {
+    if(bytecode[0] != 0x4E || bytecode[1] != 0x56 ||
+       bytecode[2] != 0x4D || bytecode[3] != 0x30) {
+        LOG_WARN("Invalid NVM signature\n");
+        return -1;
+    }
+
+    // Validate stack count
+    if(stack_count > STACK_SIZE) {
+        LOG_WARN("Initial stack count %d exceeds STACK_SIZE %d\n", stack_count, STACK_SIZE);
+        return -1;
+    }
+
+    for(int i = 0; i < MAX_PROCESSES; i++) {
+        if(!processes[i].active) {
+            processes[i].bytecode = bytecode;
+            processes[i].ip = 4;
+            processes[i].size = size;
+            processes[i].active = true;
+            processes[i].exit_code = 0;
+            processes[i].pid = i;
+            processes[i].caps_count = 0;
+            processes[i].blocked = false;
+            processes[i].wakeup_reason = 0;
+
+            // Initialize stack with provided values
+            for(int j = 0; j < stack_count; j++) {
+                processes[i].stack[j] = initial_stack_values[j];
+            }
+            processes[i].sp = stack_count;
+
+            // Initializing capabilities
+            for(int j = 0; j < caps_count && j < MAX_CAPS; j++) {
+                processes[i].capabilities[j] = initial_caps[j];
+            }
+            processes[i].caps_count = caps_count;
+
+            // Initialize locals
+            for(int j = 0; j < MAX_LOCALS; j++) {
+                processes[i].locals[j] = 0;
+            }
+
+            return i;
+        }
+    }
+
     LOG_WARN("No free process slots\n");
     return -1;
 }
