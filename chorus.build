@@ -132,37 +132,37 @@ targets:
   userspace_init.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/userspace_init.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/userspace_init.c -o ${@}"
 
   us_echo.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/echo.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/echo.c -o ${@}"
 
   us_clear.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/clear.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/clear.c -o ${@}"
 
   us_rm.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/rm.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/rm.c -o ${@}"
 
   us_write.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/write.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/write.c -o ${@}"
 
   us_nova.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/nova.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/nova.c -o ${@}"
 
   us_uname.o:
     deps: []
     cmds:
-      - "${CC} ${CFLAGS} rootfs/bin/uname.c -o ${@}"
+      - "${CC} ${CFLAGS} rootfs/usr/src/uname.c -o ${@}"
 
   chacha20.o:
     deps: []

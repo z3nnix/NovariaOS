@@ -15,7 +15,7 @@
 #include <core/fs/initramfs.h>
 #include <core/fs/iso9660.h>
 #include <core/fs/vfs.h>
-#include <rootfs/bin/userspace_init.h>
+#include <rootfs/usr/src/userspace_init.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <lib/bootloader/limine.h>

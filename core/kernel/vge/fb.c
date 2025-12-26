@@ -13,7 +13,7 @@ extern bool vfs_exists(const char* filename);
 int system_font_height = 16;
 uint8_t system_font[256][FONT_HEIGHT];
 int init_vge_font() {
-    const char* font_path = "/lib/fonts/general.psf";
+    const char* font_path = "/usr/share/fonts/general.psf";
 
     memset(system_font, 0, sizeof(system_font));
     system_font_height = 16;
