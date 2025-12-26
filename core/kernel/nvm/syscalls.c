@@ -47,6 +47,10 @@ int32_t syscall_handler(uint8_t syscall_id, nvm_process_t* proc) {
         }
 
         case SYS_SPAWN: {
+            if (!caps_has_capability(proc, CAP_FS_READ)) {
+                result = -1;
+                break;
+            }
             if (proc->sp < 1) {
                 LOG_WARN("Process %d: Stack underflow for exec\n", proc->pid);
                 result = -1;
