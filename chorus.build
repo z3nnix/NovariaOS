@@ -11,6 +11,12 @@ variables:
   KERNEL_OUT: kernel.bin
   DATE: "$(date +%Y-%m-%d)"
 
+  OS_NAME: NovariaOS
+  OS_ID: novariaos
+  OS_VERSION: 0.0.8
+  OS_STAGE: INDEV   # INDEV | RELEASE
+  OS_COLOR: "0;33"
+
 targets:
   all:
     deps: [iso]
@@ -189,3 +195,17 @@ targets:
     phony: true
     cmds:
       - "${QEMU} -m 1024M -serial file:qemu.log -cdrom build_${DATE}.iso"
+  
+  build-release:
+    phony: true
+    deps: [all]
+    cmds:
+      - |
+        if [ "${OS_STAGE}" != "RELEASE" ]; then
+          echo "✗ build-release forbidden: OS_STAGE=${OS_STAGE}. Set OS_STAGE=RELEASE"
+          exit 1
+        fi
+      - >
+        sh -c 'mkdir -p rootfs/etc && echo
+        "NAME=${OS_NAME}\nVERSION=\"${OS_VERSION}\"\nID=${OS_ID}\nANSI_COLOR=\"${OS_COLOR}\"\nPRETTY_NAME=\"${OS_NAME} ${OS_VERSION}-RELEASE\"\nHOME_URL=\"https://z3nnix.github.io/NovariaOS\"\nBUG_REPORT_URL=\"https://github.com/z3nnix/NovariaOS/issues\"" 
+        > rootfs/etc/os-release'
