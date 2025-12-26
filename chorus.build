@@ -187,9 +187,10 @@ targets:
   iso:
     deps: [kernel.bin]
     cmds:
+      - "mkdir dist"
       - "xorriso -as mkisofs -quiet -iso-level 3 -o ${BUILD_DIR}/boot/rootfs.img rootfs/"
-      - "xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --protective-msdos-label -iso-level 3 -partition_offset 64 -quiet -o build_${DATE}.iso ${BUILD_DIR}/boot/"
-      - "limine bios-install build_${DATE}.iso"
+      - "xorriso -as mkisofs -b limine-bios-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --protective-msdos-label -iso-level 3 -partition_offset 64 -quiet -o dist/build_${DATE}.iso ${BUILD_DIR}/boot/"
+      - "limine bios-install dist/build_${DATE}.iso"
 
   run:
     phony: true
