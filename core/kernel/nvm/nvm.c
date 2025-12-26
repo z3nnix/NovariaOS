@@ -117,7 +117,7 @@ int nvm_create_process_with_stack(uint8_t* bytecode, uint32_t size,
 // Execute one instruction
 bool nvm_execute_instruction(nvm_process_t* proc) {
     if(proc->ip >= proc->size) {
-        LOG_WARN("Procces %d: Instruction pointer out of bounds\n", proc->pid);
+        LOG_WARN("process %d: Instruction pointer out of bounds\n", proc->pid);
         proc->exit_code = -1;
         proc->active = false;
         return false;
@@ -130,7 +130,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         case 0x00: // HALT
             proc->active = false;
             proc->exit_code = 0;
-            LOG_DEBUG("Procces %d: Halted\n", proc->pid);
+            LOG_DEBUG("process %d: Halted\n", proc->pid);
             return false;
         
         case 0x01: // NOP
@@ -161,13 +161,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     serial_print("\n"); */
 
                 } else {
-                    LOG_WARN("Procces %d: Stack overflow in PUSH32\n", proc->pid);
+                    LOG_WARN("process %d: Stack overflow in PUSH32\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: Not enough bytes\n", proc->pid);
+                LOG_WARN("process %d: Not enough bytes\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -178,7 +178,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             if(proc->sp > 0) {
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in POP\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in POP\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -187,13 +187,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
         case 0x05: // DUP
             if(proc->sp == 0) {
-                LOG_WARN("Procces %d: Stack underflow in DUP\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in DUP\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
             }
             if(proc->sp >= STACK_SIZE) {
-                LOG_WARN("Procces %d: Stack overflow in DUP\n", proc->pid);
+                LOG_WARN("process %d: Stack overflow in DUP\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -210,7 +210,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = top;
                 proc->stack[proc->sp - 1] = second;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in SWAP\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in SWAP\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -227,7 +227,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in ADD\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in ADD\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -243,7 +243,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in SUB\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in SUB\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -259,7 +259,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in MUL\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in MUL\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -277,13 +277,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     proc->stack[proc->sp - 2] = result;
                     proc->sp--;
                 } else {
-                    LOG_WARN("Procces %d: Zero division DIV. Terminate procces. \n", proc->pid);
+                    LOG_WARN("process %d: Zero division DIV. Terminate process. \n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: Stack underflow in DIV\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in DIV\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -296,7 +296,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 int32_t second = proc->stack[proc->sp - 2];
                 
                 if (top == 0) {
-                    LOG_WARN("Procces %d: Zero division MOD. Terminate procces. \n", proc->pid);
+                    LOG_WARN("process %d: Zero division MOD. Terminate process. \n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
@@ -307,7 +307,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in MOD\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in MOD\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -332,7 +332,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in CMP\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in CMP\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -348,7 +348,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in EQ\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in EQ\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -364,7 +364,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in NEQ\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in NEQ\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -380,7 +380,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in GT\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in GT\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -396,7 +396,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 proc->stack[proc->sp - 2] = result;
                 proc->sp--;
             } else {
-                LOG_WARN("Procces %d: Stack underflow in LT\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in LT\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -415,7 +415,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 if(addr >= 4 && addr < proc->size) {
                     proc->ip = addr;
                 } else {
-                    LOG_WARN("Procces %d: Invalid address for JMP32\n", proc->pid);
+                    LOG_WARN("process %d: Invalid address for JMP32\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
@@ -437,20 +437,20 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                         if (addr >= 4 && addr < proc->size) {
                             proc->ip = addr;
                         } else {
-                            LOG_WARN("Procces %d: Invalid address for JZ32\n", proc->pid);
+                            LOG_WARN("process %d: Invalid address for JZ32\n", proc->pid);
                             proc->exit_code = -1;
                             proc->active = false;
                             return false;
                         }
                     }
                 } else {
-                    LOG_WARN("Procces %d: Not enough bytes for address JZ32\n", proc->pid);
+                    LOG_WARN("process %d: Not enough bytes for address JZ32\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: Stack underflow in JZ32\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in JZ32\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -471,20 +471,20 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                         if (addr >= 4 && addr < proc->size) {
                             proc->ip = addr;
                         } else {
-                            LOG_WARN("Procces %d: Invalid address for JNZ32\n", proc->pid);
+                            LOG_WARN("process %d: Invalid address for JNZ32\n", proc->pid);
                             proc->exit_code = -1;
                             proc->active = false;
                             return false;
                         }
                     }
                 } else {
-                    LOG_WARN("Procces %d: Not enough bytes for address JNZ32\n", proc->pid);
+                    LOG_WARN("process %d: Not enough bytes for address JNZ32\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: Stack underflow in JNZ32\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in JNZ32\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -505,19 +505,19 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     if(addr >= 4 && addr < proc->size) {
                         proc->ip = addr;
                     } else {
-                        LOG_WARN("Procces %d: Invalid address for CALLZ32\n", proc->pid);
+                        LOG_WARN("process %d: Invalid address for CALLZ32\n", proc->pid);
                         proc->exit_code = -1;
                         proc->active = false;
                         return false;
                     }
                 } else {
-                    LOG_WARN("Procces %d: Stack overflow in CALL32\n", proc->pid);
+                    LOG_WARN("process %d: Stack overflow in CALL32\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: Not enough bytes for address CALL32\n", proc->pid);
+                LOG_WARN("process %d: Not enough bytes for address CALL32\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -531,13 +531,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                 if(return_addr >= 4 && return_addr < proc->size) {
                     proc->ip = return_addr;
                 } else {
-                    LOG_WARN("Procces %d: invalid return address\n", proc->pid);
+                    LOG_WARN("process %d: invalid return address\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: stack underflow in RET\n", proc->pid);
+                LOG_WARN("process %d: stack underflow in RET\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -555,13 +555,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     if(proc->sp < STACK_SIZE) {
                         proc->stack[proc->sp++] = value;
                     } else {
-                        LOG_WARN("Procces %d: Stack overflow in LOAD\n", proc->pid);
+                        LOG_WARN("process %d: Stack overflow in LOAD\n", proc->pid);
                         proc->exit_code = -1;
                         proc->active = false;
                         return false;
                     }
                 } else {
-                    LOG_WARN("Procces %d: invalid variable index in LOAD\n", proc->pid);
+                    LOG_WARN("process %d: invalid variable index in LOAD\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
@@ -577,7 +577,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     int32_t value = proc->stack[--proc->sp];
                     proc->locals[var_index] = value;
                 } else {
-                    LOG_WARN("Procces %d: invalid index or stack underflow in STORE\n", proc->pid);
+                    LOG_WARN("process %d: invalid index or stack underflow in STORE\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
@@ -588,7 +588,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
         // Memory absolute access:
         case 0x44: // LOAD_ABS - load from absolute memory address
             if (!caps_has_capability(proc, CAP_DRV_ACCESS)) {
-                LOG_WARN("Procces %d: Required caps not receivedn\n", proc->pid);
+                LOG_WARN("process %d: Required caps not receivedn\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -612,13 +612,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     // serial_print(dbg);
                     // serial_print("\n");
                 } else {
-                    LOG_WARN("Procces %d: invalid memory address in LOAD_ABS\n", proc->pid);
+                    LOG_WARN("process %d: invalid memory address in LOAD_ABS\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: stack underflow in LOAD_ABS\n", proc->pid);
+                LOG_WARN("process %d: stack underflow in LOAD_ABS\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -627,7 +627,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
         case 0x45: // STORE_ABS - store to absolute memory address
             if (!caps_has_capability(proc, CAP_DRV_ACCESS)) {
-                LOG_WARN("Procces %d: Required caps not receivedn\n", proc->pid);
+                LOG_WARN("process %d: Required caps not receivedn\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -660,13 +660,13 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
                     }
                     proc->sp -= 2;
                 } else {
-                    LOG_WARN("Procces %d: Invalid memory address in STORE_ABS\n", proc->pid);
+                    LOG_WARN("process %d: Invalid memory address in STORE_ABS\n", proc->pid);
                     proc->exit_code = -1;
                     proc->active = false;
                     return false;
                 }
             } else {
-                LOG_WARN("Procces %d: Stack underflow in STORE_ABS\n", proc->pid);
+                LOG_WARN("process %d: Stack underflow in STORE_ABS\n", proc->pid);
                 proc->exit_code = -1;
                 proc->active = false;
                 return false;
@@ -675,7 +675,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
 
         // System calls:
         case 0x51: // BREAK
-            LOG_DEBUG("Procces %d: Stop from BREAK\n", proc->pid);
+            LOG_DEBUG("process %d: Stop from BREAK\n", proc->pid);
             char dbg[64];
             serial_print("IP: ");
             itoa(proc->ip, dbg, 10);
@@ -695,7 +695,7 @@ bool nvm_execute_instruction(nvm_process_t* proc) {
             
         default:
             char buffer[32];
-            LOG_WARN("Procces %d: Unknown opcode: 0x%s", proc->pid, buffer);
+            LOG_WARN("process %d: Unknown opcode: 0x%s", proc->pid, buffer);
             proc->exit_code = -1;
             proc->active = false;
             return false;
@@ -736,7 +736,7 @@ void nvm_scheduler_tick() {
                     char buffer[32];
                     itoa(processes[current_process].pid, buffer, 10);
 
-                    LOG_WARN("Procces %s: Reached end of code - terminating\n", buffer);
+                    LOG_WARN("process %s: Reached end of code - terminating\n", buffer);
                     processes[current_process].active = false;
                     processes[current_process].exit_code = 0;
                 }
