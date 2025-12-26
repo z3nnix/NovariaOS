@@ -1,7 +1,7 @@
 build/boot/kernel.bin
 build/boot/initramfs
 build/boot/rootfs.img
-build*.iso
+dist/
 *.log
 !build/limine-bios-cd.bin
 *.bin
