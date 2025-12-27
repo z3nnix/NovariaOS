@@ -17,14 +17,6 @@
 
 static char current_working_directory[MAX_PATH_LENGTH] = "/";
 
-static int strcmp(const char* str1, const char* str2) {
-    while (*str1 && (*str1 == *str2)) {
-        str1++;
-        str2++;
-    }
-    return *(unsigned char*)str1 - *(unsigned char*)str2;
-}
-
 
 static void cmd_help(void) {
     kprint("\nBuilt-in commands:\n", 10);
@@ -390,7 +382,7 @@ static void execute_command(const char* command) {
             
             if (data && size > 0) {
                 should_delay_prompt = 1;
-                delay_ticks = 20;
+                delay_ticks = 50;
                 nvm_execute((uint8_t*)data, size, (uint16_t[]){CAP_ALL}, 1);
                 return;
             } else {

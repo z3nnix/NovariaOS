@@ -27,6 +27,25 @@ char* strncpy(char *dest, const char *src, unsigned long n) {
     return dest;
 }
 
+void strcpy_safe(char *dest, const char *src, size_t max_len) {
+    size_t i = 0;
+    while (i < max_len - 1 && src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+}
+
+void strcat_safe(char *dest, const char *src, size_t max_len) {
+    size_t dest_len = strlen(dest);
+    size_t i = 0;
+    while (dest_len + i < max_len - 1 && src[i] != '\0') {
+        dest[dest_len + i] = src[i];
+        i++;
+    }
+    dest[dest_len + i] = '\0';
+}
+
 char* itoa(int num, char* str, int base) {
     int i = 0;
     bool is_negative = false;
@@ -65,4 +84,44 @@ size_t strlen(const char* str) {
         len++;
     }
     return len;
+}
+
+int strcmp(const char* str1, const char* str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
+char* strchr(const char* str, int c) {
+    while (*str != '\0') {
+        if (*str == (char)c) {
+            return (char*)str;
+        }
+        str++;
+    }
+    return NULL;
+}
+
+char* strstr(const char* haystack, const char* needle) {
+    if (*needle == '\0') {
+        return (char*)haystack;
+    }
+
+    for (; *haystack != '\0'; haystack++) {
+        const char* h = haystack;
+        const char* n = needle;
+
+        while (*h != '\0' && *n != '\0' && *h == *n) {
+            h++;
+            n++;
+        }
+
+        if (*n == '\0') {
+            return (char*)haystack;
+        }
+    }
+
+    return NULL;
 }
